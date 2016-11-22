@@ -1,11 +1,5 @@
 #include "Common.fx"
 
-// Resources
-// TODO Check difference from changing color on backbuffer then variable in Rays
-RWTexture2D<float4> output : register(u0);
-RWStructuredBuffer<Ray> rays : register(u1);
-
-
 
 
 
@@ -38,7 +32,7 @@ void CS( uint3 threadID : SV_DispatchThreadID )
     // Create ray
     Ray newRay;
     newRay.Position = viewSpacePos;
-    newRay.Direction = float3(screenSpaceDirection, 0);
+    newRay.Direction = normalize(viewSpaceDirection);
     newRay.Color = float3((float)threadID.x / 800, 0, (float)threadID.y / 800);
     newRay.lastVertexIndex = -1;
     newRay.reflectionFactor = 1.0f;

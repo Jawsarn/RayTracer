@@ -75,6 +75,7 @@ private:
 
     struct RenderObject
     {
+        UINT numOfVertices;
         ComputeBuffer* meshBuffer;
         ComputeBuffer* materialBuffer;
         ID3D11ShaderResourceView* texture;

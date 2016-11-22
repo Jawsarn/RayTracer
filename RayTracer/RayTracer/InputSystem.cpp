@@ -1,4 +1,5 @@
 #include "InputSystem.h"
+#include "CameraManager.h"
 #include <stdexcept>
 
 
@@ -51,6 +52,8 @@ void InputSystem::Update()
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    CameraManager* camMan = CameraManager::GetInstance();
+    int moveAmount = 100;
     PAINTSTRUCT ps;
     HDC hdc;
 
@@ -67,12 +70,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_KEYDOWN:
 
+
         switch (wParam)
         {
         case VK_ESCAPE:
             PostQuitMessage(0);
             break;
         }
+        // W
+        if (GetAsyncKeyState(0x57))
+        {
+            camMan->Walk(moveAmount);
+        }
+        else if (GetAsyncKeyState(0x41)) // A
+        {
+            camMan->Strafe(moveAmount);
+        }
+        else if (GetAsyncKeyState(0x44)) // D
+        {
+            camMan->Strafe(-moveAmount);
+        }
+        else if (GetAsyncKeyState(0x53)) // S
+        {
+            camMan->Walk(-moveAmount);
+        }
+
         break;
 
     default:

@@ -46,6 +46,8 @@ void CameraManager::LookTo(XMFLOAT3 p_EyePos, XMFLOAT3 p_EyeDir, XMFLOAT3 p_UpPo
     XMVECTOR p_VecEyeDir = XMLoadFloat3(&p_EyeDir);
     XMVECTOR p_VecUp = XMLoadFloat3(&p_UpPos);
 
+    p_VecEyeDir = XMVector3Normalize(p_VecEyeDir);
+
     XMMATRIX p_View = XMMatrixLookToLH(p_VecEye, p_VecEyeDir, p_VecUp);
 
     XMStoreFloat4x4(&m_View, p_View);

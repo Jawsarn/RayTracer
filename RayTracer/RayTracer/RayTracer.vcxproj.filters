@@ -103,5 +103,8 @@
     <FxCompile Include="Common.fx">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="IntersectionFunctions.fx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

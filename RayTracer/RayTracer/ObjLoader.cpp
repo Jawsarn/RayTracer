@@ -39,7 +39,7 @@ void ObjLoader::Load(const std::string &p_fileName, std::vector<Vertex> &o_verti
     
     if (file == NULL)
     {
-        printf("Impossible to open the file !\n");
+        std::runtime_error("Impossible to open the file !\n");
         return;
     }
 

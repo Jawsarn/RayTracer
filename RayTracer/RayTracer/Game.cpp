@@ -16,8 +16,8 @@ Game::~Game()
 void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
 {
     CameraManager* camMan = CameraManager::GetInstance();
-    camMan->SetPerspective(XM_PIDIV4, 800, 800, 0.1f, 10000.0f);
-    camMan->LookTo(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 1), XMFLOAT3(0, 1, 0));
+    camMan->SetPerspective(XM_PIDIV4, 800, 800, 0.1f, 1000000.0f);
+    camMan->LookTo(XMFLOAT3(0, 0, 3), XMFLOAT3(0, 0, -1), XMFLOAT3(0, 1, 0));
 
     InputSystem::Startup();
     m_inputSystem = InputSystem::GetInstance();

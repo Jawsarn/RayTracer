@@ -1,52 +1,32 @@
-#include "Common.fx"
+#include "IntersectionFunctions.fx"
 
-RWTexture2D<float4> output : register(u0);
-RWStructuredBuffer<Ray> rays : register(u1);
 
-struct Sphere
-{
-    float3 Position;
-    float Radius;
-    float3 Color;
-};
-
-bool CheckSphereCollision(Ray mRay)
-{
-    Sphere sphere;
-    sphere.Position = float3(0, 0, -20.0f);
-    sphere.Radius = 1;
-
-    float3 sphereToRay = (mRay.Position - sphere.Position);
-    float lenStoR = length(sphereToRay);
-    float lenDotDist = dot(mRay.Direction, sphereToRay);
-
-    float underRoot = dot(lenDotDist, lenDotDist) - lenStoR*lenStoR + sphere.Radius*sphere.Radius;
-
-    if (underRoot < 0)
-    {
-        return false;
-    }
-
-    return true;
-}
 
 [numthreads(32, 32, 1)]
 void CS(uint3 threadID : SV_DispatchThreadID)
 {
     // Out slot for rays 
     uint index = threadID.y * ScreenDimensions.x + threadID.x;
-
+    
     Ray newRay = rays[index];
-    
-    if (CheckSphereCollision(newRay))
+
+    output[threadID.xy] = float4(0, 0, 0, 0);
+
+    float t = 0;
+    float u = 0;
+    float v = 0;
+
+    for (uint i= 0; i < 400; i+= 3)
     {
-        output[threadID.xy] = float4(0,0,0, 0);
-    }
-    else
-    {
-        output[threadID.xy] = float4(1,1,1,0);
+        if (CheckTriangleCollision(newRay, i, t, u, v))
+        {
+            t /= 10;
+            output[threadID.xy] = float4(t, t, t, 0);
+        }
     }
     
+
+
 }
 
 

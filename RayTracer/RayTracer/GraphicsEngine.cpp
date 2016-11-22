@@ -246,7 +246,7 @@ HRESULT GraphicsEngine::InitializeBuffers()
     m_rayBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Ray), m_width*m_height, true, true, nullptr);
 
     ConstantBuffer constBuf;
-    constBuf.Proj = CameraManager::GetInstance()->GetProj();
+    constBuf.Proj = XMMatrixTranspose(CameraManager::GetInstance()->GetProj());
     constBuf.ScreenDimensions = XMUINT2(m_width, m_height); 
     constBuf.DoubleScreenByDimension = XMFLOAT2((2.0f /(float)m_width), -(2.0f / (float)m_height));
     
@@ -275,9 +275,9 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
     t_mat.Specular = DirectX::XMFLOAT4(t_material.Specular.x, t_material.Specular.y, t_material.Specular.z, 0);
 
     RenderObject newRenderObj;
+    newRenderObj.numOfVertices = t_vertices.size();
     newRenderObj.meshBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Vertex), t_vertices.size(), true, false, &t_vertices[0]);
     newRenderObj.materialBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ShaderMaterial), 1, true, false, &t_mat);
-
 
     std::string path = "";
 
@@ -295,6 +295,13 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
     {
         throw std::runtime_error("Error loading texture");
     }
+
+
+    // Load to graphics
+    // TODO change this,
+    ID3D11ShaderResourceView* resourceView = newRenderObj.meshBuffer->GetResourceView();
+    m_deviceContext->CSSetShaderResources(2, 1, &resourceView);
+
 }
 
 uint32_t GraphicsEngine::AddToRender(const DirectX::XMFLOAT4X4 &p_world, const std::string &p_objName)
@@ -317,7 +324,7 @@ void GraphicsEngine::UpdatePerFrameBuffer()
     CameraManager* camMan = CameraManager::GetInstance();
     PerFramebuffer perFrame;
     perFrame.CameraPosition = camMan->GetPosition();
-    perFrame.InvView = camMan->GetInvView();
+    perFrame.InvView = XMMatrixTranspose(camMan->GetInvView());
     perFrame.NumOfPointLights = 0;
     perFrame.NumOfSpheres = 0;
     perFrame.NumOfVertices = 0;
@@ -325,7 +332,7 @@ void GraphicsEngine::UpdatePerFrameBuffer()
 
     D3D11_MAPPED_SUBRESOURCE MappedResource;
     if (SUCCEEDED(m_deviceContext->Map(m_perFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
-    *(PerFramebuffer*)MappedResource.pData = perFrame;
+        *(PerFramebuffer*)MappedResource.pData = perFrame;
 
     m_deviceContext->Unmap(m_perFrameBuffer, 0);
 }
