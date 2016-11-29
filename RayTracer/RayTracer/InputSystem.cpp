@@ -24,7 +24,10 @@ void InputSystem::Startup()
 
 InputSystem::InputSystem()
 {
-
+    m_prevXPressed = false;
+    m_mouseActive = false;
+    m_resetPosX = WINDOW_SIZE_X/2;
+    m_resetPosY = WINDOW_SIZE_Y/2;
 }
 
 
@@ -48,12 +51,81 @@ void InputSystem::Update()
             break;
         }
     }
+
+    GetKeyInputs();
+    GetMouseInputs();
+}
+
+void InputSystem::GetKeyInputs()
+{
+    CameraManager* camMan = CameraManager::GetInstance();
+    float moveAmount = 0.5f;
+    // W
+    if (GetAsyncKeyState(0x57))
+    {
+        camMan->Walk(moveAmount);
+    }
+    if (GetAsyncKeyState(0x41)) // A
+    {
+        camMan->Strafe(-moveAmount);
+    }
+    if (GetAsyncKeyState(0x44)) // D
+    {
+        camMan->Strafe(moveAmount);
+    }
+    if (GetAsyncKeyState(0x53)) // S
+    {
+        camMan->Walk(-moveAmount);
+    }
+    if (GetAsyncKeyState(0x51)) // Q
+    {
+        camMan->HoverY(-moveAmount);
+    }
+    if (GetAsyncKeyState(0x45)) // E
+    {
+        camMan->HoverY(moveAmount);
+    }
+
+    // X for activating
+    if (GetAsyncKeyState(0x43) && !m_prevXPressed)
+    {
+        m_mouseActive = !m_mouseActive;
+        ShowCursor(!m_mouseActive);
+        if (m_mouseActive)
+        {
+            // Set cursor position to middle to not give movement directly
+            SetCursorPos(m_resetPosX, m_resetPosY);
+        }
+    }
+
+    m_prevXPressed = GetAsyncKeyState(0x43);
+}
+
+void InputSystem::GetMouseInputs()
+{
+    if(m_mouseActive)
+    {
+        CameraManager* camMan = CameraManager::GetInstance();
+
+        POINT t_curPoint;
+        if (GetCursorPos(&t_curPoint))
+        {
+            int diffX = m_resetPosX - t_curPoint.x;
+            int diffY = m_resetPosY - t_curPoint.y;
+
+            camMan->Pitch(-diffY*MOUSE_SENSE);
+            camMan->RotateY(-diffX*MOUSE_SENSE);
+
+            // Reset pos
+            SetCursorPos(m_resetPosX, m_resetPosY);
+        }
+    }
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    CameraManager* camMan = CameraManager::GetInstance();
-    int moveAmount = 100;
+
+
     PAINTSTRUCT ps;
     HDC hdc;
 
@@ -77,24 +149,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PostQuitMessage(0);
             break;
         }
-        // W
-        if (GetAsyncKeyState(0x57))
-        {
-            camMan->Walk(moveAmount);
-        }
-        else if (GetAsyncKeyState(0x41)) // A
-        {
-            camMan->Strafe(moveAmount);
-        }
-        else if (GetAsyncKeyState(0x44)) // D
-        {
-            camMan->Strafe(-moveAmount);
-        }
-        else if (GetAsyncKeyState(0x53)) // S
-        {
-            camMan->Walk(-moveAmount);
-        }
-
         break;
 
     default:

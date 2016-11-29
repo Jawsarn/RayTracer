@@ -1,4 +1,5 @@
 #pragma once
+#include "GameOptions.h"
 #include <Windows.h>
 
 class InputSystem
@@ -10,12 +11,21 @@ public:
 
 
 
+
+
 private:
     InputSystem();
     ~InputSystem();
 
+    void GetKeyInputs();
+    void GetMouseInputs();
 
     static InputSystem* m_singleton;
+    bool m_prevXPressed;
+    bool m_mouseActive;
+
+    int m_resetPosX;
+    int m_resetPosY;
 
 };
 

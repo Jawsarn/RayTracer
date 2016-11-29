@@ -120,6 +120,7 @@
     <ClInclude Include="D3D11Timer.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameOptions.h" />
     <ClInclude Include="GraphicsEngine.h" />
     <ClInclude Include="GraphicStructures.h" />
     <ClInclude Include="InputSystem.h" />

@@ -15,13 +15,17 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     float t = 0;
     float u = 0;
     float v = 0;
-
-    for (uint i= 0; i < 400; i+= 3)
+    float maxT = 10000000000000.0f;
+    for (uint i= 0; i < 495; i+= 3)
     {
         if (CheckTriangleCollision(newRay, i, t, u, v))
         {
-            t /= 10;
-            output[threadID.xy] = float4(t, t, t, 0);
+            if (t < maxT)
+            {
+                t /= 50.0f;
+                output[threadID.xy] = float4(t, t, t, 0);
+                maxT = t;
+            }
         }
     }
     

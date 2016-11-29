@@ -322,6 +322,7 @@ void GraphicsEngine::UpdateWorldPosition(const DirectX::XMFLOAT4X4 &p_world)
 void GraphicsEngine::UpdatePerFrameBuffer()
 {
     CameraManager* camMan = CameraManager::GetInstance();
+    camMan->Update();
     PerFramebuffer perFrame;
     perFrame.CameraPosition = camMan->GetPosition();
     perFrame.InvView = XMMatrixTranspose(camMan->GetInvView());
