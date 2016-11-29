@@ -4,6 +4,7 @@
 #include "TimeSystem.h"
 #include "CameraManager.h"
 #include "GameOptions.h"
+#include <iostream>
 
 Game::Game()
 {
@@ -34,7 +35,7 @@ void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
     DirectX::XMStoreFloat4x4(&newObj.world, DirectX::XMMatrixIdentity());
     newObj.objectID = m_graphicsEngine->AddToRender(newObj.world, "../../sword/Sword.obj");
 
-
+    m_graphicsEngine->CreateSphere(XMFLOAT3(-5, 0, 0), 3, XMFLOAT3(1, 1, 1));
 }
 
 void Game::Run()

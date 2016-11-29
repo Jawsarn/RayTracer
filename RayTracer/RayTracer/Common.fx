@@ -1,4 +1,4 @@
-
+// Buffers
 cbuffer ConstantBuffer : register(b0)
 {
     matrix Proj;
@@ -19,7 +19,7 @@ cbuffer PerFrameBuffer : register(b1)
     float2 filler;
 };
 
-
+// Primitives
 struct Ray
 {
     float3 Position;
@@ -29,12 +29,14 @@ struct Ray
     float reflectionFactor;
 };
 
-
-struct Sphere
+struct ColorData
 {
-    float3 Position;
-    float Radius;
-    float3 Color;
+    int indexTriangle;
+    int indexSphere;
+    float3 hitPosition;
+    float u;
+    float v;
+    float t;
 };
 
 struct Vertex
@@ -44,6 +46,22 @@ struct Vertex
     float2 TexCord;
 };
 
+struct Sphere
+{
+    float3 Position;
+    float Radius;
+    float3 Color;
+};
+
+struct PointLight
+{
+    float3 Position;
+    float Radius;
+    float3 Color;
+};
+
+
+
 static const float kEpsilon = 1e-8;
 
 
@@ -51,4 +69,8 @@ static const float kEpsilon = 1e-8;
 // TODO Check difference from changing color on backbuffer then variable in Rays
 RWTexture2D<float4> output : register(u0);
 RWStructuredBuffer<Ray> rays : register(u1);
-StructuredBuffer<Vertex> vertices: register(t2);
+RWStructuredBuffer<ColorData> colorData : register(u2);
+
+StructuredBuffer<Vertex> vertices: register(t3);
+StructuredBuffer<Sphere> spheres : register(t4);
+StructuredBuffer<PointLight> pointLights : register(t5);

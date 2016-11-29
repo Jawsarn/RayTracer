@@ -20,6 +20,28 @@ struct Ray
     float reflectionFactor;
 };
 
+struct ColorData
+{
+    int indexTriangle;
+    int indexSphere;
+    XMFLOAT3 hitPosition;
+    float u;
+    float v;
+    float t;
+};
+
+struct Sphere
+{
+    XMFLOAT3 position;
+    float radius;
+    XMFLOAT3 color;
+};
+
+struct PointLight
+{
+
+};
+
 struct ShaderMaterial
 {
     XMFLOAT4 Ambient;

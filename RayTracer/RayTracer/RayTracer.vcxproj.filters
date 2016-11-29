@@ -94,19 +94,22 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Coloring.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="InitRaysCS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Intersection.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Common.fx">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="IntersectionFunctions.fx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ColoringCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="IntersectionCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="CreateRaysCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

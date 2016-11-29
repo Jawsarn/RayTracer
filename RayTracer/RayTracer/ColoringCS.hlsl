@@ -1,36 +1,73 @@
 #include "IntersectionFunctions.fx"
 
 
+float3 DirectIllumination(float3 pos, float3 norm, PointLight light, float inSpec)
+{
+    float3 lightPos = light.Position;
+
+    float3 lightVec = lightPos - pos;
+
+    float d = length(lightVec);
+    if (d > light.Radius)
+    {
+        return float3(0, 0, 0);
+    }
+
+    //normalize vector
+    lightVec /= d;
+
+    //diffuse factor
+    float diffuseFactor = dot(lightVec, norm);
+
+    if (diffuseFactor < 0.02f)
+    {
+        return float3(0, 0, 0);
+    }
+
+    float att = pow(max(0.0f, 1.0 - (d / light.Radius)), 2.0f);
+
+    float3 toEye = normalize(CameraPosition - pos);
+    float3 v = reflect(-lightVec, norm);
+
+
+    float specFactor = pow(max(dot(v, toEye), 0.0f), 1.0f)*inSpec;
+
+    return (light.Color *att * (diffuseFactor + specFactor));
+}
+
 
 [numthreads(32, 32, 1)]
 void CS(uint3 threadID : SV_DispatchThreadID)
 {
-    // Out slot for rays 
     uint index = threadID.y * ScreenDimensions.x + threadID.x;
-    
-    Ray newRay = rays[index];
 
-    output[threadID.xy] = float4(0, 0, 0, 0);
+    ColorData data = colorData[index];
 
-    float t = 0;
-    float u = 0;
-    float v = 0;
-    float maxT = 10000000000000.0f;
-    for (uint i= 0; i < 495; i+= 3)
+    PointLight light;
+    light.Position = float3(0, 0, 0);
+    light.Radius = 20;
+    light.Color = float3(3, 0, 0);
+
+    if (data.indexSphere != -1)
     {
-        if (CheckTriangleCollision(newRay, i, t, u, v))
-        {
-            if (t < maxT)
-            {
-                t /= 50.0f;
-                output[threadID.xy] = float4(t, t, t, 0);
-                maxT = t;
-            }
-        }
+        Sphere sphere = spheres[data.indexSphere];
+        output[threadID.xy] = float4(sphere.Color, 0);
     }
-    
+    else if (data.indexTriangle != -1)
+    {
+        Vertex v0 = vertices[data.indexTriangle];
+        Vertex v1 = vertices[data.indexTriangle + 1];
+        Vertex v2 = vertices[data.indexTriangle + 2];
+        float w = (1 - data.u - data.v);
+        float3 normal = normalize(v0.Normal * w + v1.Normal * data.u + v2.Normal * data.v);
 
-
+        float3 color = DirectIllumination(data.hitPosition, normal, light, 1);
+        output[threadID.xy] = float4(color, 0);
+    }
+    else
+    {
+        output[threadID.xy] = float4(0, 0, 0, 0);
+    }
 }
 
 

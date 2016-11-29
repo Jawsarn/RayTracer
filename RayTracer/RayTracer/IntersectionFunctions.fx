@@ -1,10 +1,8 @@
 #include "Common.fx"
 
-bool CheckSphereCollision(Ray mRay)
+bool CheckSphereCollision(Ray mRay, uint index, out float t)
 {
-    Sphere sphere;
-    sphere.Position = float3(0, 0, -20.0f);
-    sphere.Radius = 1;
+    Sphere sphere = spheres[index];
 
     float3 sphereToRay = (mRay.Position - sphere.Position);
     float lenStoR = length(sphereToRay);
@@ -17,6 +15,7 @@ bool CheckSphereCollision(Ray mRay)
         return false;
     }
 
+    t = underRoot;
     return true;
 }
 

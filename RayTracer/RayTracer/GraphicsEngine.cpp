@@ -235,8 +235,9 @@ HRESULT GraphicsEngine::InitializeBackBuffer()
 HRESULT GraphicsEngine::InitializeShaders()
 {
     m_initRaysShader = m_computeWrapper->CreateComputeShader(_T("InitRaysCS.hlsl"), NULL, "CS", NULL);
-    m_intersectionShader = m_computeWrapper->CreateComputeShader(_T("Intersection.hlsl"), NULL, "CS", NULL);
-    m_coloringShader = m_computeWrapper->CreateComputeShader(_T("Coloring.hlsl"), NULL, "CS", NULL);
+    m_createRaysShader = m_computeWrapper->CreateComputeShader(_T("CreateRaysCS.hlsl"), NULL, "CS", NULL);
+    m_intersectionShader = m_computeWrapper->CreateComputeShader(_T("IntersectionCS.hlsl"), NULL, "CS", NULL);
+    m_coloringShader = m_computeWrapper->CreateComputeShader(_T("ColoringCS.hlsl"), NULL, "CS", NULL);
 
     return S_OK;
 }
@@ -244,6 +245,7 @@ HRESULT GraphicsEngine::InitializeShaders()
 HRESULT GraphicsEngine::InitializeBuffers()
 {
     m_rayBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Ray), m_width*m_height, true, true, nullptr);
+    m_colorDataBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ColorData), m_width*m_height, true, true, nullptr);
 
     ConstantBuffer constBuf;
     constBuf.Proj = XMMatrixTranspose(CameraManager::GetInstance()->GetProj());
@@ -300,9 +302,29 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
     // Load to graphics
     // TODO change this,
     ID3D11ShaderResourceView* resourceView = newRenderObj.meshBuffer->GetResourceView();
-    m_deviceContext->CSSetShaderResources(2, 1, &resourceView);
+    m_deviceContext->CSSetShaderResources(3, 1, &resourceView);
 
 }
+
+void GraphicsEngine::CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color)
+{
+    // Clear previous buffer if needed
+    Sphere newSphere;
+    newSphere.position = p_position;
+    newSphere.radius = p_radius;
+    newSphere.color = p_color;
+
+    m_spheres.push_back(newSphere);
+
+    if(m_sphereBuffer != nullptr)
+        m_sphereBuffer->Release();
+
+    m_sphereBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Sphere), m_spheres.size(), true, false, &m_spheres[0]);
+    ID3D11ShaderResourceView* resourceView = m_sphereBuffer->GetResourceView();
+    m_deviceContext->CSSetShaderResources(4, 1, &resourceView);
+}
+
+
 
 uint32_t GraphicsEngine::AddToRender(const DirectX::XMFLOAT4X4 &p_world, const std::string &p_objName)
 {
@@ -327,7 +349,7 @@ void GraphicsEngine::UpdatePerFrameBuffer()
     perFrame.CameraPosition = camMan->GetPosition();
     perFrame.InvView = XMMatrixTranspose(camMan->GetInvView());
     perFrame.NumOfPointLights = 0;
-    perFrame.NumOfSpheres = 0;
+    perFrame.NumOfSpheres = m_spheres.size();
     perFrame.NumOfVertices = 0;
 
 
@@ -346,17 +368,39 @@ void GraphicsEngine::Render()
     UINT y = ceil((float)m_height / (float)THREAD_GROUP_SIZE_Y);
 
     ID3D11UnorderedAccessView* t_rays = m_rayBuffer->GetUnorderedAccessView();
+    ID3D11UnorderedAccessView* t_colordata = m_colorDataBuffer->GetUnorderedAccessView();
     
     m_deviceContext->CSSetUnorderedAccessViews(0, 1, &m_backBufferUAV, nullptr);
     m_deviceContext->CSSetUnorderedAccessViews(1, 1, &t_rays, nullptr);
+    m_deviceContext->CSSetUnorderedAccessViews(2, 1, &t_colordata, nullptr);
 
     // Init rays
     m_initRaysShader->Set();
     m_deviceContext->Dispatch(x, y, 1);
 
+    // Intersect
+    m_intersectionShader->Set();
+    m_deviceContext->Dispatch(x, y, 1);
+
     // Color
     m_coloringShader->Set();
     m_deviceContext->Dispatch(x, y, 1);
+
+    // For number of bounces
+    for (size_t i = 0; i < 0; i++)
+    {
+        // Create rays
+        m_initRaysShader->Set();
+        m_deviceContext->Dispatch(x, y, 1);
+
+        // Intersect
+        m_intersectionShader->Set();
+        m_deviceContext->Dispatch(x, y, 1);
+
+        // Color
+        m_coloringShader->Set();
+        m_deviceContext->Dispatch(x, y, 1);
+    }
 
     m_swapChain->Present(0, 0);
 }

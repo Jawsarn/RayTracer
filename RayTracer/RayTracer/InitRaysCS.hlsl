@@ -6,13 +6,10 @@
 [numthreads(32, 32, 1)]
 void CS( uint3 threadID : SV_DispatchThreadID )
 {
-	//output[threadID.xy] = float4((float)threadID.x / 800, (float)threadID.y / 800, 1,1); // temp
-
     // Screen cords
     // (1/ Y) * X * 2 - 1 to get screenspace
     // Less computation with;
     // (1/Y)*2) * X - 1
-
     float2 screenPos = float2(threadID.xy) * DoubleScreenByDimension + float2(-1.0f, 1.0f);
 
     // Create ray in screenspace

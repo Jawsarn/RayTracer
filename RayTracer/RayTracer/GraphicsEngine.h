@@ -26,6 +26,7 @@ public:
     static GraphicsEngine* GetInstance();
     static void Startup(HINSTANCE p_hInstance, int p_nCmdShow, WNDPROC p_winProc);
     void LoadObject(const std::string & p_name);
+    void CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color);
     uint32_t AddToRender(const DirectX::XMFLOAT4X4 & p_world, const std::string &p_objectName);
     void UpdateWorldPosition(const DirectX::XMFLOAT4X4 & p_world);
     void Render();
@@ -64,14 +65,23 @@ private:
 
     // Shaders
     ComputeShader* m_initRaysShader = NULL;
+    ComputeShader* m_createRaysShader = NULL;
     ComputeShader* m_intersectionShader = NULL;
     ComputeShader* m_coloringShader = NULL;
 
     // Buffers
     ComputeBuffer* m_rayBuffer;
+    ComputeBuffer* m_colorDataBuffer;
     ID3D11Buffer* m_constantBuffer;
     ID3D11Buffer* m_perFrameBuffer;
 
+    // Spheres
+    ComputeBuffer* m_sphereBuffer;
+    std::vector<Sphere> m_spheres;
+
+    // Lights
+    ComputeBuffer* m_pointLightBuffer;
+    std::vector<PointLight> m_pointLights;
 
     struct RenderObject
     {
