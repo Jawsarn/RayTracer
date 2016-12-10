@@ -33,6 +33,8 @@ struct ColorData
 {
     int indexTriangle;
     int indexSphere;
+    float3 startPosition;
+    float3 direction;
     float3 hitPosition;
     float u;
     float v;
@@ -74,3 +76,7 @@ RWStructuredBuffer<ColorData> colorData : register(u2);
 StructuredBuffer<Vertex> vertices: register(t3);
 StructuredBuffer<Sphere> spheres : register(t4);
 StructuredBuffer<PointLight> pointLights : register(t5);
+
+Texture2D meshTexture : register(t6);
+
+SamplerState simpleSampler : register(s0);

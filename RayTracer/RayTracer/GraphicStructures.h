@@ -24,6 +24,8 @@ struct ColorData
 {
     int indexTriangle;
     int indexSphere;
+    XMFLOAT3 startPosition;
+    XMFLOAT3 direction;
     XMFLOAT3 hitPosition;
     float u;
     float v;
@@ -39,7 +41,9 @@ struct Sphere
 
 struct PointLight
 {
-
+    XMFLOAT3 position;
+    float radius;
+    XMFLOAT3 color;
 };
 
 struct ShaderMaterial

@@ -51,6 +51,8 @@ GraphicsEngine::GraphicsEngine(HINSTANCE p_hInstance, int p_nCmdShow, WNDPROC p_
     hr = InitializeBuffers();
     if (FAILED(hr))
         throw std::runtime_error("Startup error");
+
+    hr = InitializeSamplers();
 }
 
 
@@ -264,6 +266,30 @@ HRESULT GraphicsEngine::InitializeBuffers()
     return S_OK;
 }
 
+HRESULT GraphicsEngine::InitializeSamplers()
+{
+    HRESULT hr;
+    D3D11_SAMPLER_DESC sampDesc;
+    ZeroMemory(&sampDesc, sizeof(sampDesc));
+    sampDesc.Filter = D3D11_FILTER_ANISOTROPIC; // D3D11_FILTER_ANISOTROPIC  D3D11_FILTER_MIN_MAG_MIP_LINEAR
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+
+    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+    sampDesc.MinLOD = 0;
+    sampDesc.MaxLOD = D3D11_FLOAT32_MAX; //D3D11_FLOAT32_MAX
+    sampDesc.MaxAnisotropy = 16; //why not max it out when we can?
+    hr = m_device->CreateSamplerState(&sampDesc, &m_simpleSampler);
+    if (FAILED(hr))
+        return hr;
+
+    m_deviceContext->CSSetSamplers(0, 1, &m_simpleSampler);
+
+    return hr;
+}
+
 void GraphicsEngine::LoadObject(const std::string & p_name)
 {
     std::vector<Vertex> t_vertices;
@@ -275,6 +301,43 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
     t_mat.Ambient = DirectX::XMFLOAT4(t_material.Ambient.x, t_material.Ambient.y, t_material.Ambient.z, 0);
     t_mat.Diffuse = DirectX::XMFLOAT4(t_material.Diffuse.x, t_material.Diffuse.y, t_material.Diffuse.z, 0);
     t_mat.Specular = DirectX::XMFLOAT4(t_material.Specular.x, t_material.Specular.y, t_material.Specular.z, 0);
+
+    float z = -5;
+    /*
+    // Add big square
+    Vertex newVert;
+    newVert.position = XMFLOAT3(-10, 10, z); // Top left
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(0, 0);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(10, 10, z); // Top right
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(1, 0);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(-10, -10, z); // Bot left
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(0, 1);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(10, 10, z); // Top right
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(1, 0);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(10, -10, z); // Bot right
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(1, 1);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(-10, -10, z); 
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(0, 1);
+    t_vertices.push_back(newVert);
+    */
+
+
 
     RenderObject newRenderObj;
     newRenderObj.numOfVertices = t_vertices.size();
@@ -298,12 +361,13 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
         throw std::runtime_error("Error loading texture");
     }
 
+    m_numVertices = t_vertices.size();
 
     // Load to graphics
     // TODO change this,
     ID3D11ShaderResourceView* resourceView = newRenderObj.meshBuffer->GetResourceView();
     m_deviceContext->CSSetShaderResources(3, 1, &resourceView);
-
+    m_deviceContext->CSSetShaderResources(6, 1, &newRenderObj.texture);
 }
 
 void GraphicsEngine::CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color)
@@ -336,6 +400,26 @@ uint32_t GraphicsEngine::AddToRender(const DirectX::XMFLOAT4X4 &p_world, const s
     return m_instances.size() - 1;
 }
 
+UINT GraphicsEngine::CreatePointLight(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color)
+{
+    // Clear previous buffer if needed
+    PointLight newLight;
+    newLight.position = p_position;
+    newLight.radius = p_radius;
+    newLight.color = p_color;
+
+    m_pointLights.push_back(newLight);
+
+    if (m_pointLightBuffer != nullptr)
+        m_pointLightBuffer->Release();
+
+    m_pointLightBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(PointLight), m_pointLights.size(), true, false, &m_pointLights[0]);
+    ID3D11ShaderResourceView* resourceView = m_pointLightBuffer->GetResourceView();
+    m_deviceContext->CSSetShaderResources(5, 1, &resourceView);
+
+    return m_pointLights.size() - 1;
+}
+
 void GraphicsEngine::UpdateWorldPosition(const DirectX::XMFLOAT4X4 &p_world)
 {
 
@@ -348,9 +432,9 @@ void GraphicsEngine::UpdatePerFrameBuffer()
     PerFramebuffer perFrame;
     perFrame.CameraPosition = camMan->GetPosition();
     perFrame.InvView = XMMatrixTranspose(camMan->GetInvView());
-    perFrame.NumOfPointLights = 0;
+    perFrame.NumOfPointLights = m_pointLights.size();
     perFrame.NumOfSpheres = m_spheres.size();
-    perFrame.NumOfVertices = 0;
+    perFrame.NumOfVertices = m_numVertices;
 
 
     D3D11_MAPPED_SUBRESOURCE MappedResource;

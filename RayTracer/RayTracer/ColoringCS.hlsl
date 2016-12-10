@@ -35,6 +35,13 @@ float3 DirectIllumination(float3 pos, float3 norm, PointLight light, float inSpe
     return (light.Color *att * (diffuseFactor + specFactor));
 }
 
+/*
+Help text
+For each object we hit, we send a ray to each light and see if it hits or misses.
+If it hits we add light, if not ignore.
+
+
+*/
 
 [numthreads(32, 32, 1)]
 void CS(uint3 threadID : SV_DispatchThreadID)
@@ -43,15 +50,15 @@ void CS(uint3 threadID : SV_DispatchThreadID)
 
     ColorData data = colorData[index];
 
-    PointLight light;
-    light.Position = float3(0, 0, 0);
-    light.Radius = 20;
-    light.Color = float3(3, 0, 0);
+    float3 normal = float3(0, 0, 0);
+    float3 matColor = float3(0, 0, 0);
 
     if (data.indexSphere != -1)
     {
         Sphere sphere = spheres[data.indexSphere];
-        output[threadID.xy] = float4(sphere.Color, 0);
+        matColor = sphere.Color;
+        float3 sphereNormal = normalize(data.hitPosition - sphere.Position);
+        normal = normalize(reflect(data.direction, sphereNormal));
     }
     else if (data.indexTriangle != -1)
     {
@@ -59,15 +66,65 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         Vertex v1 = vertices[data.indexTriangle + 1];
         Vertex v2 = vertices[data.indexTriangle + 2];
         float w = (1 - data.u - data.v);
-        float3 normal = normalize(v0.Normal * w + v1.Normal * data.u + v2.Normal * data.v);
+        normal = normalize(v0.Normal * w + v1.Normal * data.u + v2.Normal * data.v);
+        float2 uvCord = v0.TexCord * w + v1.TexCord * data.u + v2.TexCord * data.v;
+        matColor = meshTexture.SampleLevel(simpleSampler, uvCord, 0);
+        //matColor = float3(1, 1, 1);
+    }
 
-        float3 color = DirectIllumination(data.hitPosition, normal, light, 1);
-        output[threadID.xy] = float4(color, 0);
-    }
-    else
+
+    float3 finalColor = matColor * 0.1f;
+    // For each light
+    for (uint i = 0; i < NumOfPointLights; i++)
     {
-        output[threadID.xy] = float4(0, 0, 0, 0);
+        PointLight light = pointLights[i];
+        Ray newRay;
+        newRay.Position = data.hitPosition;
+        newRay.Direction = normalize(light.Position - data.hitPosition);
+        float lengthToLight = length(light.Position - data.hitPosition);
+
+        float t = 0;
+        float u = 0;
+        float v = 0;
+        bool hit = false;
+
+        
+        for (uint i = 0; i < NumOfVertices; i += 3)
+        {
+            if (CheckTriangleCollision(newRay, i, t, u, v))
+            {
+                if (t < lengthToLight && t > kEpsilon*1000.0f)
+                {
+                    hit = true;
+                    break;
+                }
+            }
+        }
+
+        
+        for (uint i = 0; i < NumOfSpheres; i++)
+        {
+            if (CheckSphereCollision(newRay, i, t))
+            {
+                if (t < lengthToLight)
+                {
+                    hit = true;
+                    break;
+                }
+            }
+        }
+        
+
+
+        // Add light
+        if (!hit)
+        {
+            finalColor += DirectIllumination(data.hitPosition, normal, light, 0.5f) * matColor;
+            //finalColor += float3(9, 9, 9)* matColor;
+        }
     }
+
+    output[threadID.xy] = float4(finalColor, 0);
 }
 
 

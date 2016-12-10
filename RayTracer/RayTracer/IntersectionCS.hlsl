@@ -8,8 +8,8 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     uint index = threadID.y * ScreenDimensions.x + threadID.x;
 
     Ray newRay = rays[index];
+    ColorData data;
 
-    output[threadID.xy] = float4(0, 0, 0, 0);
 
     float t = 0;
     float u = 0;
@@ -18,17 +18,19 @@ void CS(uint3 threadID : SV_DispatchThreadID)
 
     int indexTriangle = -1;
     int indexSphere = -1;
-
-    for (uint i = 0; i < 495; i += 3)
+    //output[threadID.xy] = float4(0,0, 0, 0);
+    for (uint i = 0; i < NumOfVertices; i += 3)
     {
         if (CheckTriangleCollision(newRay, i, t, u, v))
         {
             if (t < maxT)
             {
-                t /= 50.0f;
-                //output[threadID.xy] = float4(1, 1, 1, 0);
+                //float col = t/50.0f;
+                //output[threadID.xy] = float4(col, col, col, 0);
                 maxT = t;
                 indexTriangle = i;
+                data.u = u;
+                data.v = v;
             }
         }
     }
@@ -39,8 +41,8 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         {
             if (t < maxT)
             {
-                t /= 50.0f;
-                //output[threadID.xy] = float4(1, 1, 1, 0);
+                //float col = t / 50.0f;
+                //output[threadID.xy] = float4(col, col, col, 0);
                 maxT = t;
                 indexTriangle = -1;
                 indexSphere = i;
@@ -48,12 +50,12 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         }
     }
 
-    ColorData data;
+
     data.indexTriangle = indexTriangle;
     data.indexSphere = indexSphere;
+    data.startPosition = newRay.Position;
+    data.direction = newRay.Direction;
     data.hitPosition = newRay.Position + newRay.Direction*maxT;
-    data.u = u;
-    data.v = v;
     data.t = t;
 
     colorData[index] = data;

@@ -64,6 +64,7 @@ void ObjLoader::Load(const std::string &p_fileName, std::vector<Vertex> &o_verti
         {
             XMFLOAT2 uv;
             fscanf_s(file, "%f %f\n", &uv.x, &uv.y);
+            uv.y = 1 - uv.y;
             uvs.push_back(uv);
         }
         else if (strcmp(lineHeader, "vn") == 0)

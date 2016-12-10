@@ -1,24 +1,33 @@
 #include "Common.fx"
 
+//https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+// Could try, might be faster http://www.lighthouse3d.com/tutorials/maths/ray-sphere-intersection/
 bool CheckSphereCollision(Ray mRay, uint index, out float t)
 {
     Sphere sphere = spheres[index];
 
     float3 sphereToRay = (mRay.Position - sphere.Position);
     float lenStoR = length(sphereToRay);
+
     float lenDotDist = dot(mRay.Direction, sphereToRay);
 
-    float underRoot = dot(lenDotDist, lenDotDist) - lenStoR*lenStoR + sphere.Radius*sphere.Radius;
+    if (lenDotDist > 0) // possible speedup
+        return false;
+
+    float underRoot = lenDotDist*lenDotDist - lenStoR*lenStoR + sphere.Radius*sphere.Radius;
 
     if (underRoot < 0)
     {
         return false;
     }
 
-    t = underRoot;
+    t = -lenDotDist - sqrt(underRoot);
+
     return true;
 }
 
+// See if there are better triangle collision ways
+// https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 bool CheckTriangleCollision(Ray pRay, uint startIndex, out float t, out float u, out float v)
 {
     Vertex A = vertices[startIndex];
@@ -47,14 +56,14 @@ bool CheckTriangleCollision(Ray pRay, uint startIndex, out float t, out float u,
     float3 tVec = pRay.Position - A.Position;
 
     u = dot(tVec, pVec) * invDet;
-    if (u < 0 || u > 1)
+    if (u < 0.0f || u > 1.0f)
     {
         return false;
     }
 
     float3 qVec = cross(tVec, AtoB);
     v = dot(pRay.Direction, qVec) * invDet;
-    if (v < 0 || u + v > 1)
+    if (v < 0.0f || u + v > 1.0f)
     {
         return false;
     }

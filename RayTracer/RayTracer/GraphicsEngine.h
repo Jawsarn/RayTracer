@@ -28,6 +28,7 @@ public:
     void LoadObject(const std::string & p_name);
     void CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color);
     uint32_t AddToRender(const DirectX::XMFLOAT4X4 & p_world, const std::string &p_objectName);
+    UINT CreatePointLight(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color);
     void UpdateWorldPosition(const DirectX::XMFLOAT4X4 & p_world);
     void Render();
 
@@ -42,6 +43,8 @@ private:
     HRESULT InitializeBackBuffer();
     HRESULT InitializeShaders();
     HRESULT InitializeBuffers();
+
+    HRESULT InitializeSamplers();
 
     void UpdatePerFrameBuffer();
 
@@ -75,6 +78,9 @@ private:
     ID3D11Buffer* m_constantBuffer;
     ID3D11Buffer* m_perFrameBuffer;
 
+    // Samplers
+    ID3D11SamplerState* m_simpleSampler;
+
     // Spheres
     ComputeBuffer* m_sphereBuffer;
     std::vector<Sphere> m_spheres;
@@ -101,5 +107,7 @@ private:
     std::map<std::string, RenderObject> m_loadedObjects;
     std::vector<ObjectInstance> m_instances;
 
+    // Should be removed later to be put in struct
+    UINT m_numVertices;
 };
 
