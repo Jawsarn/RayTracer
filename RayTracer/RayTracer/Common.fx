@@ -36,6 +36,8 @@ struct ColorData
     float3 startPosition;
     float3 direction;
     float3 hitPosition;
+    float3 color;
+    float reflection;
     float u;
     float v;
     float t;

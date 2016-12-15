@@ -4,7 +4,18 @@
 [numthreads(32, 32, 1)]
 void CS(uint3 threadID : SV_DispatchThreadID)
 {
+    uint index = threadID.y * ScreenDimensions.x + threadID.x;
 
+    ColorData data = colorData[index];
+
+    // Create ray
+    Ray newRay;
+    newRay.Position = data.hitPosition;
+    newRay.Direction = data.direction;
+    newRay.Color = data.color;
+    newRay.lastVertexIndex = data.indexTriangle;
+    newRay.reflectionFactor = data.reflection;
+    rays[index] = newRay;
 }
 
 /*

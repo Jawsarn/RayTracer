@@ -18,7 +18,7 @@ Game::~Game()
 void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
 {
     CameraManager* camMan = CameraManager::GetInstance();
-    camMan->SetPerspective(XM_PIDIV4, (float)(WINDOW_SIZE_X), (float)(WINDOW_SIZE_Y), 0.1f, 1000000.0f);
+    camMan->SetPerspective(XM_PIDIV4, (float)(WINDOW_SIZE_X), (float)(WINDOW_SIZE_Y), 0.0f, 1000000.0f);
     camMan->LookTo(XMFLOAT3(2, 0, -8), XMFLOAT3(-1, 0, 3), XMFLOAT3(0, 1, 0));
 
     InputSystem::Startup();
@@ -41,9 +41,8 @@ void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
     m_graphicsEngine->CreateSphere(XMFLOAT3(0, 3, 0), 1, XMFLOAT3(1, 0, 0));
 
     m_graphicsEngine->CreatePointLight(XMFLOAT3(1, 0, 0), 15, XMFLOAT3(1,1,1));
-    m_graphicsEngine->CreatePointLight(XMFLOAT3(0, 1, -1), 15, XMFLOAT3(1, 1, 1));
+    m_graphicsEngine->CreatePointLight(XMFLOAT3(1, 1, 0), 15, XMFLOAT3(1, 1, 1));
     m_graphicsEngine->CreatePointLight(XMFLOAT3(0, 6, 0), 50, XMFLOAT3(1, 1, 1));
-    m_graphicsEngine->CreatePointLight(XMFLOAT3(-20, 0, 0), 100, XMFLOAT3(1, 1, 1));
 }
 
 void Game::Run()
@@ -77,6 +76,7 @@ void Game::Run()
 
 void Game::Update(double p_stepLength)
 {
+
     m_inputSystem->Update();
 }
 

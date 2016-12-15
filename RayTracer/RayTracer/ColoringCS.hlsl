@@ -93,7 +93,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         {
             if (CheckTriangleCollision(newRay, i, t, u, v))
             {
-                if (t < lengthToLight && t > kEpsilon*1000.0f)
+                if (t < lengthToLight && t > kEpsilon*1000.0f) //&& data.indexTriangle != i
                 {
                     hit = true;
                     break;
@@ -116,6 +116,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         
 
 
+
         // Add light
         if (!hit)
         {
@@ -123,6 +124,12 @@ void CS(uint3 threadID : SV_DispatchThreadID)
             //finalColor += float3(9, 9, 9)* matColor;
         }
     }
+    finalColor = finalColor*data.reflection + data.color;
+
+    data.direction = normalize(reflect( data.direction, normal));
+    data.color = finalColor;
+    data.reflection = 0.5f;
+    colorData[index] = data;
 
     output[threadID.xy] = float4(finalColor, 0);
 }

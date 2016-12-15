@@ -30,7 +30,7 @@ void CS( uint3 threadID : SV_DispatchThreadID )
     Ray newRay;
     newRay.Position = viewSpacePos;
     newRay.Direction = normalize(viewSpaceDirection);
-    newRay.Color = float3((float)threadID.x / 800, 0, (float)threadID.y / 800);
+    newRay.Color = float3(0,0,0);
     newRay.lastVertexIndex = -1;
     newRay.reflectionFactor = 1.0f;
     rays[outIndex] = newRay;

@@ -27,6 +27,8 @@ struct ColorData
     XMFLOAT3 startPosition;
     XMFLOAT3 direction;
     XMFLOAT3 hitPosition;
+    XMFLOAT3 color;
+    float reflection;
     float u;
     float v;
     float t;

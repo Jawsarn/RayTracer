@@ -19,11 +19,11 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     int indexTriangle = -1;
     int indexSphere = -1;
     //output[threadID.xy] = float4(0,0, 0, 0);
-    for (uint i = 0; i < NumOfVertices; i += 3)
+    for (int i = 0; i < NumOfVertices; i += 3)
     {
         if (CheckTriangleCollision(newRay, i, t, u, v))
         {
-            if (t < maxT)
+            if (t < maxT && newRay.lastVertexIndex != i)
             {
                 //float col = t/50.0f;
                 //output[threadID.xy] = float4(col, col, col, 0);
@@ -35,7 +35,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         }
     }
 
-    for (uint i = 0; i < NumOfSpheres; i++)
+    for (int i = 0; i < NumOfSpheres; i++)
     {
         if (CheckSphereCollision(newRay, i, t))
         {
@@ -56,7 +56,9 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     data.startPosition = newRay.Position;
     data.direction = newRay.Direction;
     data.hitPosition = newRay.Position + newRay.Direction*maxT;
+    data.color = newRay.Color;
     data.t = t;
+    data.reflection = newRay.reflectionFactor;
 
     colorData[index] = data;
 }

@@ -471,10 +471,10 @@ void GraphicsEngine::Render()
     m_deviceContext->Dispatch(x, y, 1);
 
     // For number of bounces
-    for (size_t i = 0; i < 0; i++)
+    for (size_t i = 0; i < 1; i++)
     {
         // Create rays
-        m_initRaysShader->Set();
+        m_createRaysShader->Set();
         m_deviceContext->Dispatch(x, y, 1);
 
         // Intersect
