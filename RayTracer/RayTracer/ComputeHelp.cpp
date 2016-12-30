@@ -57,7 +57,7 @@ bool ComputeShader::Init(TCHAR* shaderFile, TCHAR* blobFileAppendix, char* pFunc
 	
 #if defined(DEBUG) || defined(_DEBUG)
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
-	dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+	//dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 #else
 	dwShaderFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif

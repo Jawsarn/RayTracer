@@ -471,7 +471,7 @@ void GraphicsEngine::Render()
     m_deviceContext->Dispatch(x, y, 1);
 
     // For number of bounces
-    for (size_t i = 0; i < 1; i++)
+    for (size_t i = 0; i < 0; i++)
     {
         // Create rays
         m_createRaysShader->Set();
