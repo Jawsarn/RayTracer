@@ -57,8 +57,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     {
         Sphere sphere = spheres[data.indexSphere];
         matColor = sphere.Color;
-        float3 sphereNormal = normalize(data.hitPosition - sphere.Position);
-        normal = normalize(reflect(data.direction, sphereNormal));
+        normal = normalize(data.hitPosition - sphere.Position);
     }
     else if (data.indexTriangle != -1)
     {

@@ -26,6 +26,7 @@ struct Ray
     float3 Direction;
     float3 Color;
     int lastVertexIndex;
+    int lastSphereIndex;
     float reflectionFactor;
 };
 

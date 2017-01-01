@@ -39,7 +39,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     {
         if (CheckSphereCollision(newRay, i, t))
         {
-            if (t < maxT)
+            if (t < maxT && newRay.lastSphereIndex != i)
             {
                 //float col = t / 50.0f;
                 //output[threadID.xy] = float4(col, col, col, 0);

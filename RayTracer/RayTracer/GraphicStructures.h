@@ -17,6 +17,7 @@ struct Ray
     XMFLOAT3 Direction;
     XMFLOAT3 Color;
     int lastVertexIndex;
+    int lastSphereIndex;
     float reflectionFactor;
 };
 

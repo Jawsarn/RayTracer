@@ -4,7 +4,10 @@
 #include <DirectXMath.h>
 #include <vector>
 
+using namespace DirectX;
+
 class InputSystem;
+class LightManager;
 class GraphicsEngine;
 
 struct GameObject
@@ -28,6 +31,7 @@ private:
     void Render();
 
     InputSystem* m_inputSystem = nullptr;
+    LightManager* m_lightManager = nullptr;
     GraphicsEngine* m_graphicsEngine = nullptr;
 
     std::vector<GameObject> m_objects;

@@ -3,7 +3,9 @@
 #include "GraphicsEngine.h"
 #include "TimeSystem.h"
 #include "CameraManager.h"
+#include "LightManager.h"
 #include "GameOptions.h"
+
 #include <iostream>
 
 Game::Game()
@@ -22,8 +24,7 @@ void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
     camMan->LookTo(XMFLOAT3(2, 0, -8), XMFLOAT3(-1, 0, 3), XMFLOAT3(0, 1, 0));
 
     InputSystem::Startup();
-    m_inputSystem = InputSystem::GetInstance();
-    
+
     GraphicsEngine::Startup(p_hInstance, p_nCmdShow, WndProc);
     m_graphicsEngine = GraphicsEngine::GetInstance();
 
@@ -35,14 +36,15 @@ void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
     DirectX::XMStoreFloat4x4(&newObj.world, DirectX::XMMatrixIdentity());
     newObj.objectID = m_graphicsEngine->AddToRender(newObj.world, "../../sword/Sword.obj");
 
-    m_graphicsEngine->CreateSphere(XMFLOAT3(-6, 0, 0), 2, XMFLOAT3(0, 1, 0));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(-7, 0, 0), 2, XMFLOAT3(1, 0, 1));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(5, 0, 0), 1, XMFLOAT3(0, 0, 1));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(0, 3, 0), 1, XMFLOAT3(1, 0, 0));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(-6, 0, -10), 2, XMFLOAT3(0, 1, 0));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(-7, 0, -10), 2, XMFLOAT3(1, 0, 1));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(5, 0, -10), 1, XMFLOAT3(0, 0, 1));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(0, 3, -10), 1, XMFLOAT3(1, 0, 0));
 
-    m_graphicsEngine->CreatePointLight(XMFLOAT3(1, 0, 0), 15, XMFLOAT3(1,1,1));
-    m_graphicsEngine->CreatePointLight(XMFLOAT3(1, 1, 0), 15, XMFLOAT3(1, 1, 1));
-    m_graphicsEngine->CreatePointLight(XMFLOAT3(0, 6, 0), 50, XMFLOAT3(1, 1, 1));
+
+
+    m_inputSystem = InputSystem::GetInstance();
+    m_lightManager = LightManager::GetInstance();
 }
 
 void Game::Run()
@@ -76,8 +78,8 @@ void Game::Run()
 
 void Game::Update(double p_stepLength)
 {
-
     m_inputSystem->Update();
+    m_lightManager->Update();
 }
 
 void Game::Render()

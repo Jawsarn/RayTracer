@@ -126,13 +126,13 @@ void ComputeShader::Unset()
 }
 
 ComputeBuffer* ComputeWrap::CreateBuffer(COMPUTE_BUFFER_TYPE uType,
-	UINT uElementSize, UINT uCount, bool bSRV, bool bUAV, VOID* pInitData, bool bCreateStaging, char* debugName)
+	UINT uElementSize, UINT uCount, bool bSRV, bool bUAV, VOID* pInitData, bool bCreateStaging, bool pCPUAcess, char* debugName)
 {
 	ComputeBuffer* buffer = new ComputeBuffer();
 	buffer->_D3DContext = mD3DDeviceContext;
 
 	if(uType == STRUCTURED_BUFFER)
-		buffer->_Resource = CreateStructuredBuffer(uElementSize, uCount, bSRV, bUAV, pInitData);
+		buffer->_Resource = CreateStructuredBuffer(uElementSize, uCount, bSRV, bUAV, pInitData, pCPUAcess);
 	else if(uType == RAW_BUFFER)
 		buffer->_Resource = CreateRawBuffer(uElementSize * uCount, pInitData);
 
@@ -159,7 +159,7 @@ ComputeBuffer* ComputeWrap::CreateBuffer(COMPUTE_BUFFER_TYPE uType,
 }
 
 ID3D11Buffer* ComputeWrap::CreateStructuredBuffer(UINT uElementSize, UINT uCount,
-									bool bSRV, bool bUAV, VOID* pInitData)
+									bool bSRV, bool bUAV, VOID* pInitData, bool pCPUAcess)
 {
     ID3D11Buffer* pBufOut = nullptr;
 
@@ -174,6 +174,11 @@ ID3D11Buffer* ComputeWrap::CreateStructuredBuffer(UINT uElementSize, UINT uCount
 	desc.ByteWidth = bufferSize < 16 ? 16 : bufferSize;
     desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
     desc.StructureByteStride = uElementSize;
+    if (pCPUAcess)
+    {
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        desc.Usage = D3D11_USAGE_DYNAMIC;
+    }
 
     if ( pInitData )
     {

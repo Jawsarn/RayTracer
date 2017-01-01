@@ -27,6 +27,8 @@ private:
     int m_resetPosX;
     int m_resetPosY;
 
+    bool lightPressed;
+    float cooldown;
 };
 
 

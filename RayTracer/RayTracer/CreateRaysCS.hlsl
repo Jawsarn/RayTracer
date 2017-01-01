@@ -14,6 +14,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     newRay.Direction = data.direction;
     newRay.Color = data.color;
     newRay.lastVertexIndex = data.indexTriangle;
+    newRay.lastSphereIndex = data.indexSphere;
     newRay.reflectionFactor = data.reflection;
     rays[index] = newRay;
 }

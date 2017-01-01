@@ -29,6 +29,8 @@ public:
     void CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color);
     uint32_t AddToRender(const DirectX::XMFLOAT4X4 & p_world, const std::string &p_objectName);
     UINT CreatePointLight(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color);
+    void RemovePointLight();
+    void UpdatePointLight(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color, UINT p_ID);
     void UpdateWorldPosition(const DirectX::XMFLOAT4X4 & p_world);
     void Render();
 

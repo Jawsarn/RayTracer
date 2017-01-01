@@ -32,6 +32,7 @@ void CS( uint3 threadID : SV_DispatchThreadID )
     newRay.Direction = normalize(viewSpaceDirection);
     newRay.Color = float3(0,0,0);
     newRay.lastVertexIndex = -1;
+    newRay.lastSphereIndex = -1;
     newRay.reflectionFactor = 1.0f;
     rays[outIndex] = newRay;
 }

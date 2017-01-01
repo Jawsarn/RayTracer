@@ -413,11 +413,45 @@ UINT GraphicsEngine::CreatePointLight(XMFLOAT3 p_position, float p_radius, XMFLO
     if (m_pointLightBuffer != nullptr)
         m_pointLightBuffer->Release();
 
-    m_pointLightBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(PointLight), m_pointLights.size(), true, false, &m_pointLights[0]);
+    m_pointLightBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(PointLight), m_pointLights.size(), true, false, &m_pointLights[0], false, true);
     ID3D11ShaderResourceView* resourceView = m_pointLightBuffer->GetResourceView();
     m_deviceContext->CSSetShaderResources(5, 1, &resourceView);
 
     return m_pointLights.size() - 1;
+}
+
+void GraphicsEngine::RemovePointLight()
+{
+    m_pointLights.erase(m_pointLights.end() - 1);
+
+    if (m_pointLightBuffer != nullptr)
+        m_pointLightBuffer->Release();
+
+    // Can't create 0 size buffer
+    if (m_pointLights.size() == 0)
+        return;
+
+    m_pointLightBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(PointLight), m_pointLights.size(), true, false, &m_pointLights[0], false, true);
+    ID3D11ShaderResourceView* resourceView = m_pointLightBuffer->GetResourceView();
+    m_deviceContext->CSSetShaderResources(5, 1, &resourceView);
+}
+
+void GraphicsEngine::UpdatePointLight(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color, UINT p_ID)
+{
+    m_pointLights[p_ID].position = p_position;
+    m_pointLights[p_ID].radius = p_radius;
+    m_pointLights[p_ID].color = p_color;
+
+    D3D11_MAPPED_SUBRESOURCE MappedResource;
+    if (SUCCEEDED(m_deviceContext->Map(m_pointLightBuffer->GetResource(), 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
+    {
+        for (size_t i = 0; i < m_pointLights.size(); i++)
+        {
+            ((PointLight*)MappedResource.pData)[i] = m_pointLights[i];
+        }
+    }
+
+    m_deviceContext->Unmap(m_pointLightBuffer->GetResource(), 0);
 }
 
 void GraphicsEngine::UpdateWorldPosition(const DirectX::XMFLOAT4X4 &p_world)
@@ -471,7 +505,7 @@ void GraphicsEngine::Render()
     m_deviceContext->Dispatch(x, y, 1);
 
     // For number of bounces
-    for (size_t i = 0; i < 0; i++)
+    for (size_t i = 0; i < 1; i++)
     {
         // Create rays
         m_createRaysShader->Set();

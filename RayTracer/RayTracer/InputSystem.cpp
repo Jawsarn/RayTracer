@@ -1,5 +1,6 @@
 #include "InputSystem.h"
 #include "CameraManager.h"
+#include "LightManager.h"
 #include <stdexcept>
 
 
@@ -25,6 +26,7 @@ void InputSystem::Startup()
 InputSystem::InputSystem()
 {
     m_prevXPressed = false;
+    lightPressed = false;
     m_mouseActive = false;
     m_resetPosX = WINDOW_SIZE_X/2;
     m_resetPosY = WINDOW_SIZE_Y/2;
@@ -54,11 +56,20 @@ void InputSystem::Update()
 
     GetKeyInputs();
     GetMouseInputs();
+    if (lightPressed)
+    {
+        cooldown -= 17;
+
+        if (cooldown <= 0)
+            lightPressed = false;
+    }
 }
 
 void InputSystem::GetKeyInputs()
 {
     CameraManager* camMan = CameraManager::GetInstance();
+    LightManager* lightMan = LightManager::GetInstance();
+
     float moveAmount = 0.5f;
     // W
     if (GetAsyncKeyState(0x57))
@@ -85,6 +96,20 @@ void InputSystem::GetKeyInputs()
     {
         camMan->HoverY(moveAmount);
     }
+
+    if (GetAsyncKeyState(0x5A) && !lightPressed) // Z
+    {
+        lightMan->AddLight();
+        lightPressed = true;
+        cooldown = 1000;
+    }
+    if (GetAsyncKeyState(0x58) && !lightPressed) // X
+    {
+        lightMan->RemoveLight();
+        lightPressed = true;
+        cooldown = 1000;
+    }
+
 
     // X for activating
     if (GetAsyncKeyState(0x43) && !m_prevXPressed)
