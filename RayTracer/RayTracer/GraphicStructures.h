@@ -49,6 +49,14 @@ struct PointLight
     XMFLOAT3 color;
 };
 
+struct SpotLight
+{
+    XMFLOAT3 Position;
+    XMFLOAT3 Direction;
+    float Radius;
+    XMFLOAT3 Color;
+};
+
 struct ShaderMaterial
 {
     XMFLOAT4 Ambient;

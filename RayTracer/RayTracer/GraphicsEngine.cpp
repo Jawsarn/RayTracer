@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include "DDSTextureLoader.h"
 #include "CameraManager.h"
+#include "GameOptions.h"
 
 GraphicsEngine* GraphicsEngine::m_singleton = nullptr;
 
@@ -110,7 +111,7 @@ HRESULT GraphicsEngine::InitializeWindow(int p_nCmdShow, WNDPROC p_winProc)
         return E_FAIL;
 
     // Create window
-    RECT rc = { 0, 0, 800, 800 };
+    RECT rc = { 0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y};
     AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
     if (!(m_handleWindow = CreateWindow(
@@ -231,6 +232,7 @@ HRESULT GraphicsEngine::InitializeBackBuffer()
 
     // create shader unordered access view on back buffer for compute shader to write into texture
     hr = m_device->CreateUnorderedAccessView(backBuffer, NULL, &m_backBufferUAV);
+
     return hr;
 }
 
@@ -240,19 +242,21 @@ HRESULT GraphicsEngine::InitializeShaders()
     m_createRaysShader = m_computeWrapper->CreateComputeShader(_T("CreateRaysCS.hlsl"), NULL, "CS", NULL);
     m_intersectionShader = m_computeWrapper->CreateComputeShader(_T("IntersectionCS.hlsl"), NULL, "CS", NULL);
     m_coloringShader = m_computeWrapper->CreateComputeShader(_T("ColoringCS.hlsl"), NULL, "CS", NULL);
+    m_ssShader = m_computeWrapper->CreateComputeShader(_T("SuperSampleCS.hlsl"), NULL, "CS", NULL);
 
     return S_OK;
 }
 
 HRESULT GraphicsEngine::InitializeBuffers()
 {
-    m_rayBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Ray), m_width*m_height, true, true, nullptr);
-    m_colorDataBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ColorData), m_width*m_height, true, true, nullptr);
+    m_preSSTexture = m_computeWrapper->CreateTexture(DXGI_FORMAT_R8G8B8A8_UNORM, WINDOW_DRAW_SIZE_X, WINDOW_DRAW_SIZE_Y, WINDOW_DRAW_SIZE_X, nullptr);
+    m_rayBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Ray), WINDOW_DRAW_SIZE_X*WINDOW_DRAW_SIZE_Y, true, true, nullptr);
+    m_colorDataBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ColorData), WINDOW_DRAW_SIZE_X*WINDOW_DRAW_SIZE_Y, true, true, nullptr);
 
     ConstantBuffer constBuf;
     constBuf.Proj = XMMatrixTranspose(CameraManager::GetInstance()->GetProj());
-    constBuf.ScreenDimensions = XMUINT2(m_width, m_height); 
-    constBuf.DoubleScreenByDimension = XMFLOAT2((2.0f /(float)m_width), -(2.0f / (float)m_height));
+    constBuf.ScreenDimensions = XMUINT2(WINDOW_DRAW_SIZE_X, WINDOW_DRAW_SIZE_Y);
+    constBuf.DoubleScreenByDimension = XMFLOAT2((2.0f /(float)WINDOW_DRAW_SIZE_X), -(2.0f / (float)WINDOW_DRAW_SIZE_Y));
     
 
     m_constantBuffer = m_computeWrapper->CreateConstantBuffer(sizeof(ConstantBuffer), &constBuf, D3D11_USAGE::D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE);
@@ -482,13 +486,17 @@ void GraphicsEngine::Render()
 {
     UpdatePerFrameBuffer();
 
-    UINT x = ceil((float)m_width / (float)THREAD_GROUP_SIZE_X);
-    UINT y = ceil((float)m_height / (float)THREAD_GROUP_SIZE_Y);
+
+    UINT x = ceil((float)WINDOW_DRAW_SIZE_X / (float)THREAD_GROUP_SIZE_X);
+    UINT y = ceil((float)WINDOW_DRAW_SIZE_Y / (float)THREAD_GROUP_SIZE_Y);
+    UINT sx = ceil((float)WINDOW_SIZE_X / (float)THREAD_GROUP_SIZE_X);
+    UINT sy = ceil((float)WINDOW_SIZE_Y / (float)THREAD_GROUP_SIZE_Y);
 
     ID3D11UnorderedAccessView* t_rays = m_rayBuffer->GetUnorderedAccessView();
     ID3D11UnorderedAccessView* t_colordata = m_colorDataBuffer->GetUnorderedAccessView();
+    ID3D11UnorderedAccessView* t_preSSTextureUAV = m_preSSTexture->GetUnorderedAccessView();
     
-    m_deviceContext->CSSetUnorderedAccessViews(0, 1, &m_backBufferUAV, nullptr);
+    m_deviceContext->CSSetUnorderedAccessViews(0, 1, &t_preSSTextureUAV, nullptr);
     m_deviceContext->CSSetUnorderedAccessViews(1, 1, &t_rays, nullptr);
     m_deviceContext->CSSetUnorderedAccessViews(2, 1, &t_colordata, nullptr);
 
@@ -505,7 +513,7 @@ void GraphicsEngine::Render()
     m_deviceContext->Dispatch(x, y, 1);
 
     // For number of bounces
-    for (size_t i = 0; i < 1; i++)
+    for (size_t i = 0; i < 0; i++)
     {
         // Create rays
         m_createRaysShader->Set();
@@ -519,6 +527,19 @@ void GraphicsEngine::Render()
         m_coloringShader->Set();
         m_deviceContext->Dispatch(x, y, 1);
     }
+    
+    // Supersample
+    ID3D11UnorderedAccessView* t_nullView = nullptr;
+    ID3D11ShaderResourceView* t_preSSTextureSRV = m_preSSTexture->GetResourceView();
+    m_deviceContext->CSSetUnorderedAccessViews(0, 1, &t_nullView, nullptr);
+    m_deviceContext->CSSetShaderResources(0, 1, &t_preSSTextureSRV);
+    m_deviceContext->CSSetUnorderedAccessViews(7, 1, &m_backBufferUAV, nullptr);
 
+    m_ssShader->Set();
+    m_deviceContext->Dispatch(sx, sy, 1);
+
+    ID3D11ShaderResourceView* t_nullSRVView = nullptr;
+    m_deviceContext->CSSetShaderResources(0, 1, &t_nullSRVView);
+    
     m_swapChain->Present(0, 0);
 }

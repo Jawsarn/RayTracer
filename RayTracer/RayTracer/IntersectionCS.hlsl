@@ -6,6 +6,9 @@ void CS(uint3 threadID : SV_DispatchThreadID)
 {
     // Out slot for rays 
     uint index = threadID.y * ScreenDimensions.x + threadID.x;
+    if (threadID.x >= ScreenDimensions.x || threadID.y >= ScreenDimensions.y)
+        return;
+
 
     Ray newRay = rays[index];
     ColorData data;

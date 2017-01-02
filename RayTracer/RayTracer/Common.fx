@@ -65,7 +65,13 @@ struct PointLight
     float3 Color;
 };
 
-
+struct SpotLight
+{
+    float3 Position;
+    float3 Direction;
+    float Radius;
+    float3 Color;
+};
 
 static const float kEpsilon = 1e-8;
 

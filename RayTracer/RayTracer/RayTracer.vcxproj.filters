@@ -118,5 +118,8 @@
     <FxCompile Include="CreateRaysCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="SuperSampleCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

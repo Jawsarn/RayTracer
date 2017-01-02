@@ -5,6 +5,9 @@
 void CS(uint3 threadID : SV_DispatchThreadID)
 {
     uint index = threadID.y * ScreenDimensions.x + threadID.x;
+    if (threadID.x >= ScreenDimensions.x || threadID.y >= ScreenDimensions.y )
+        return;
+
 
     ColorData data = colorData[index];
 

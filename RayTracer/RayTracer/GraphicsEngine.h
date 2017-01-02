@@ -73,6 +73,10 @@ private:
     ComputeShader* m_createRaysShader = NULL;
     ComputeShader* m_intersectionShader = NULL;
     ComputeShader* m_coloringShader = NULL;
+    ComputeShader* m_ssShader = NULL;
+
+    // Texture
+    ComputeTexture* m_preSSTexture;
 
     // Buffers
     ComputeBuffer* m_rayBuffer;

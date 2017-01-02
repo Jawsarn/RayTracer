@@ -6,6 +6,9 @@
 [numthreads(32, 32, 1)]
 void CS( uint3 threadID : SV_DispatchThreadID )
 {
+    if (threadID.x >= ScreenDimensions.x || threadID.y >= ScreenDimensions.y)
+        return;
+
     // Screen cords
     // (1/ Y) * X * 2 - 1 to get screenspace
     // Less computation with;
