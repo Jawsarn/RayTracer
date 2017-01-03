@@ -55,6 +55,7 @@ struct SpotLight
     XMFLOAT3 Direction;
     float Radius;
     XMFLOAT3 Color;
+    float Spot;
 };
 
 struct ShaderMaterial

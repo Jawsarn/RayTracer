@@ -71,6 +71,7 @@ struct SpotLight
     float3 Direction;
     float Radius;
     float3 Color;
+    float Spot;
 };
 
 static const float kEpsilon = 1e-8;
@@ -85,6 +86,7 @@ RWStructuredBuffer<ColorData> colorData : register(u2);
 StructuredBuffer<Vertex> vertices: register(t3);
 StructuredBuffer<Sphere> spheres : register(t4);
 StructuredBuffer<PointLight> pointLights : register(t5);
+StructuredBuffer<SpotLight> spotLights : register(t8);
 
 Texture2D meshTexture : register(t6);
 

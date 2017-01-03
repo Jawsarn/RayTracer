@@ -31,6 +31,7 @@ public:
     UINT CreatePointLight(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color);
     void RemovePointLight();
     void UpdatePointLight(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color, UINT p_ID);
+    void CreateSpotLight(XMFLOAT3 p_position, XMFLOAT3 p_direction, float p_radius, XMFLOAT3 p_color, float p_spot);
     void UpdateWorldPosition(const DirectX::XMFLOAT4X4 & p_world);
     void Render();
 
@@ -94,6 +95,9 @@ private:
     // Lights
     ComputeBuffer* m_pointLightBuffer;
     std::vector<PointLight> m_pointLights;
+
+    ComputeBuffer* m_spotLightBuffer;
+    std::vector<SpotLight> m_spotLights;
 
     struct RenderObject
     {

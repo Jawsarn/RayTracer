@@ -12,6 +12,8 @@ LightManager::LightManager()
     {
         GraphicsEngine::GetInstance()->CreatePointLight(m_lights[i].pos, m_lights[i].radius, m_lights[i].color);
     }
+
+    GraphicsEngine::GetInstance()->CreateSpotLight(XMFLOAT3(0, 1.0f,0), XMFLOAT3(0,-1,0), 20, XMFLOAT3(1,1,1), 10);
 }
 
 

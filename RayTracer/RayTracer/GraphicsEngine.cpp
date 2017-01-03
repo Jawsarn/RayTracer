@@ -458,6 +458,26 @@ void GraphicsEngine::UpdatePointLight(XMFLOAT3 p_position, float p_radius, XMFLO
     m_deviceContext->Unmap(m_pointLightBuffer->GetResource(), 0);
 }
 
+void GraphicsEngine::CreateSpotLight(XMFLOAT3 p_position, XMFLOAT3 p_direction, float p_radius, XMFLOAT3 p_color, float p_spot)
+{
+    // Clear previous buffer if needed
+    SpotLight newLight;
+    newLight.Position = p_position;
+    newLight.Direction = p_direction;
+    newLight.Radius = p_radius;
+    newLight.Color = p_color;
+    newLight.Spot = p_spot;
+
+    m_spotLights.push_back(newLight);
+
+    if (m_spotLightBuffer != nullptr)
+        m_spotLightBuffer->Release();
+
+    m_spotLightBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(SpotLight), m_spotLights.size(), true, false, &m_spotLights[0], false, true);
+    ID3D11ShaderResourceView* resourceView = m_spotLightBuffer->GetResourceView();
+    m_deviceContext->CSSetShaderResources(8, 1, &resourceView);
+}
+
 void GraphicsEngine::UpdateWorldPosition(const DirectX::XMFLOAT4X4 &p_world)
 {
 
@@ -513,7 +533,7 @@ void GraphicsEngine::Render()
     m_deviceContext->Dispatch(x, y, 1);
 
     // For number of bounces
-    for (size_t i = 0; i < 0; i++)
+    for (size_t i = 0; i < 1; i++)
     {
         // Create rays
         m_createRaysShader->Set();
