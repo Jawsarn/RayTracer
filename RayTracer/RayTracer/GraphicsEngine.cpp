@@ -54,6 +54,8 @@ GraphicsEngine::GraphicsEngine(HINSTANCE p_hInstance, int p_nCmdShow, WNDPROC p_
         throw std::runtime_error("Startup error");
 
     hr = InitializeSamplers();
+
+    m_numBounces = 0;
 }
 
 
@@ -493,6 +495,7 @@ void GraphicsEngine::UpdatePerFrameBuffer()
     perFrame.NumOfPointLights = m_pointLights.size();
     perFrame.NumOfSpheres = m_spheres.size();
     perFrame.NumOfVertices = m_numVertices;
+    perFrame.NumOfSpotLights = m_spotLights.size();
 
 
     D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -533,7 +536,7 @@ void GraphicsEngine::Render()
     m_deviceContext->Dispatch(x, y, 1);
 
     // For number of bounces
-    for (size_t i = 0; i < 1; i++)
+    for (size_t i = 0; i < m_numBounces; i++)
     {
         // Create rays
         m_createRaysShader->Set();
@@ -562,4 +565,15 @@ void GraphicsEngine::Render()
     m_deviceContext->CSSetShaderResources(0, 1, &t_nullSRVView);
     
     m_swapChain->Present(0, 0);
+}
+
+void GraphicsEngine::IncrementBounces()
+{
+    m_numBounces++;
+}
+
+void GraphicsEngine::DecrementBounces()
+{
+    if(m_numBounces > 0)
+        m_numBounces--;
 }

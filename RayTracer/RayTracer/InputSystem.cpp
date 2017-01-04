@@ -2,6 +2,7 @@
 #include "CameraManager.h"
 #include "LightManager.h"
 #include <stdexcept>
+#include "GraphicsEngine.h"
 
 
 
@@ -26,7 +27,7 @@ void InputSystem::Startup()
 InputSystem::InputSystem()
 {
     m_prevXPressed = false;
-    lightPressed = false;
+    actionPressed = false;
     m_mouseActive = false;
     m_resetPosX = WINDOW_SIZE_X/2;
     m_resetPosY = WINDOW_SIZE_Y/2;
@@ -56,12 +57,12 @@ void InputSystem::Update()
 
     GetKeyInputs();
     GetMouseInputs();
-    if (lightPressed)
+    if (actionPressed)
     {
         cooldown -= 17;
 
         if (cooldown <= 0)
-            lightPressed = false;
+            actionPressed = false;
     }
 }
 
@@ -69,6 +70,7 @@ void InputSystem::GetKeyInputs()
 {
     CameraManager* camMan = CameraManager::GetInstance();
     LightManager* lightMan = LightManager::GetInstance();
+    GraphicsEngine* graphEngine = GraphicsEngine::GetInstance();
 
     float moveAmount = 0.5f;
     // W
@@ -97,17 +99,30 @@ void InputSystem::GetKeyInputs()
         camMan->HoverY(moveAmount);
     }
 
-    if (GetAsyncKeyState(0x5A) && !lightPressed) // Z
+    if (GetAsyncKeyState(0x5A) && !actionPressed) // Z
     {
         lightMan->AddLight();
-        lightPressed = true;
-        cooldown = 1000;
+        actionPressed = true;
+        cooldown = 500;
     }
-    if (GetAsyncKeyState(0x58) && !lightPressed) // X
+    if (GetAsyncKeyState(0x58) && !actionPressed) // X
     {
         lightMan->RemoveLight();
-        lightPressed = true;
-        cooldown = 1000;
+        actionPressed = true;
+        cooldown = 500;
+    }
+
+    if (GetAsyncKeyState(0x52) && !actionPressed) // R
+    {
+        graphEngine->IncrementBounces();
+        actionPressed = true;
+        cooldown = 500;
+    }
+    if (GetAsyncKeyState(0x46) && !actionPressed) // F
+    {
+        graphEngine->DecrementBounces();
+        actionPressed = true;
+        cooldown = 500;
     }
 
 

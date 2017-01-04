@@ -15,8 +15,9 @@ cbuffer PerFrameBuffer : register(b1)
 
     uint NumOfVertices;
     uint NumOfSpheres;
+    uint NumOfSpotLights;
 
-    float2 filler;
+    float filler;
 };
 
 // Primitives
@@ -48,6 +49,7 @@ struct Vertex
 {
     float3 Position;
     float3 Normal;
+    float3 Tangent;
     float2 TexCord;
 };
 
@@ -89,5 +91,6 @@ StructuredBuffer<PointLight> pointLights : register(t5);
 StructuredBuffer<SpotLight> spotLights : register(t8);
 
 Texture2D meshTexture : register(t6);
+Texture2D normalMap : register(t9);
 
 SamplerState simpleSampler : register(s0);

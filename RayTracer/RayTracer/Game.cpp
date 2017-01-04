@@ -36,10 +36,10 @@ void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
     DirectX::XMStoreFloat4x4(&newObj.world, DirectX::XMMatrixIdentity());
     newObj.objectID = m_graphicsEngine->AddToRender(newObj.world, "../../sword/Sword.obj");
 
-    m_graphicsEngine->CreateSphere(XMFLOAT3(-6, 0, -10), 2, XMFLOAT3(0, 1, 0));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(-7, 0, -10), 2, XMFLOAT3(1, 0, 1));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(5, 0, -10), 1, XMFLOAT3(0, 0, 1));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(0, 3, -10), 1, XMFLOAT3(1, 0, 0));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(2, 0, 0), 0.4f, XMFLOAT3(0, 1, 0));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(-2, 1.5f, 0), 0.25, XMFLOAT3(1, 0, 1));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(-1, -1, -1), 0.25, XMFLOAT3(0, 0, 1));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(0, -1.5f, 0), 0.25, XMFLOAT3(1, 0, 0));
 
 
 

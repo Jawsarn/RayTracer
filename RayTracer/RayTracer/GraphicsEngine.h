@@ -35,6 +35,10 @@ public:
     void UpdateWorldPosition(const DirectX::XMFLOAT4X4 & p_world);
     void Render();
 
+    void IncrementBounces();
+
+    void DecrementBounces();
+
 
 
 private:
@@ -119,5 +123,7 @@ private:
 
     // Should be removed later to be put in struct
     UINT m_numVertices;
+
+    UINT m_numBounces;
 };
 

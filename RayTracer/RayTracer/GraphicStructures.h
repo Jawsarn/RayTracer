@@ -8,6 +8,7 @@ struct Vertex
 {
     XMFLOAT3 position;
     XMFLOAT3 normal;
+    XMFLOAT3 tangent;
     XMFLOAT2 texcoord;
 };
 
@@ -91,7 +92,8 @@ struct PerFramebuffer
     unsigned int NumOfVertices;
     unsigned int NumOfSpheres;
 
-    XMFLOAT2 filler;
+    unsigned int NumOfSpotLights;
+    float filler;
 };
 
 

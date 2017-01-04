@@ -163,9 +163,59 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         }
     }
 
-    finalColor += DirectIlluminationSpotLight(data.hitPosition, normal, spotLights[0], 0.5f) * matColor;
+    // For each spotlight
+    for (uint i = 0; i < NumOfSpotLights; i++)
+    {
+        SpotLight light = spotLights[i];
+        Ray newRay;
+        newRay.Position = data.hitPosition;
+        newRay.Direction = normalize(light.Position - data.hitPosition);
+        float lengthToLight = length(light.Position - data.hitPosition);
 
-    finalColor = finalColor*data.reflection + data.color;
+        float t = 0;
+        float u = 0;
+        float v = 0;
+        bool hit = false;
+
+
+        for (uint i = 0; i < NumOfVertices; i += 3)
+        {
+            if (CheckTriangleCollision(newRay, i, t, u, v))
+            {
+                if (t < lengthToLight && t > kEpsilon*1000.0f) //&& data.indexTriangle != i
+                {
+                    hit = true;
+                    break;
+                }
+            }
+        }
+
+
+        for (uint i = 0; i < NumOfSpheres; i++)
+        {
+            if (CheckSphereCollision(newRay, i, t))
+            {
+                if (t < lengthToLight)
+                {
+                    hit = true;
+                    break;
+                }
+            }
+        }
+
+
+
+
+        // Add light
+        if (!hit)
+        {
+            finalColor += DirectIlluminationSpotLight(data.hitPosition, normal, spotLights[0], 0.5f) * matColor;
+            //finalColor += float3(9, 9, 9)* matColor;
+        }
+    }
+
+
+    finalColor = finalColor*data.reflection + data.color*(1.0f-data.reflection);
 
     data.direction = normalize(reflect( data.direction, normal));
     data.color = finalColor;
