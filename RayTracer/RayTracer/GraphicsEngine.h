@@ -78,6 +78,7 @@ private:
     ComputeShader* m_createRaysShader = NULL;
     ComputeShader* m_intersectionShader = NULL;
     ComputeShader* m_coloringShader = NULL;
+    ComputeShader* m_lightCalcShader = NULL;
     ComputeShader* m_ssShader = NULL;
 
     // Texture

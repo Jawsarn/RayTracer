@@ -244,6 +244,7 @@ HRESULT GraphicsEngine::InitializeShaders()
     m_createRaysShader = m_computeWrapper->CreateComputeShader(_T("CreateRaysCS.hlsl"), NULL, "CS", NULL);
     m_intersectionShader = m_computeWrapper->CreateComputeShader(_T("IntersectionCS.hlsl"), NULL, "CS", NULL);
     m_coloringShader = m_computeWrapper->CreateComputeShader(_T("ColoringCS.hlsl"), NULL, "CS", NULL);
+    m_lightCalcShader = m_computeWrapper->CreateComputeShader(_T("LightCalcCS.hlsl"), NULL, "CS", NULL);
     m_ssShader = m_computeWrapper->CreateComputeShader(_T("SuperSampleCS.hlsl"), NULL, "CS", NULL);
 
     return S_OK;
@@ -357,11 +358,20 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
     {
         path = p_name.substr(0, lastSlash + 1);
     }
-    path = path + t_material.diffuseTexture;
+    std::string fullPath =  path + t_material.diffuseTexture;
     std::wstring t_fullPath;
-    t_fullPath.assign(path.begin(), path.end());
+    t_fullPath.assign(fullPath.begin(), fullPath.end());
 
     HRESULT hr = CreateDDSTextureFromFile(m_device, t_fullPath.c_str(), nullptr, &newRenderObj.texture);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error("Error loading texture");
+    }
+
+    fullPath = path + "stoneNormal.dds";
+    t_fullPath.assign(fullPath.begin(), fullPath.end());
+    ID3D11ShaderResourceView* t_normTexture;
+    hr = CreateDDSTextureFromFile(m_device, t_fullPath.c_str(), nullptr, &t_normTexture);
     if (FAILED(hr))
     {
         throw std::runtime_error("Error loading texture");
@@ -374,6 +384,7 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
     ID3D11ShaderResourceView* resourceView = newRenderObj.meshBuffer->GetResourceView();
     m_deviceContext->CSSetShaderResources(3, 1, &resourceView);
     m_deviceContext->CSSetShaderResources(6, 1, &newRenderObj.texture);
+    m_deviceContext->CSSetShaderResources(9, 1, &t_normTexture);
 }
 
 void GraphicsEngine::CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color)
@@ -535,6 +546,10 @@ void GraphicsEngine::Render()
     m_coloringShader->Set();
     m_deviceContext->Dispatch(x, y, 1);
 
+    // Light calculations
+    //m_lightCalcShader->Set();
+    //m_deviceContext->Dispatch(x, y, 1);
+
     // For number of bounces
     for (size_t i = 0; i < m_numBounces; i++)
     {
@@ -549,6 +564,11 @@ void GraphicsEngine::Render()
         // Color
         m_coloringShader->Set();
         m_deviceContext->Dispatch(x, y, 1);
+
+        // Light calculations
+        //m_lightCalcShader->Set();
+        //m_deviceContext->Dispatch(x, y, 1);
+
     }
     
     // Supersample

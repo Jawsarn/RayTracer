@@ -1,75 +1,6 @@
 #include "IntersectionFunctions.fx"
+#include "IlluminationFunctions.fx"
 
-
-float3 DirectIlluminationPointLight(float3 pos, float3 norm, PointLight light, float inSpec)
-{
-    float3 lightPos = light.Position;
-
-    float3 lightVec = lightPos - pos;
-
-    float d = length(lightVec);
-    if (d > light.Radius)
-    {
-        return float3(0, 0, 0);
-    }
-
-    //normalize vector
-    lightVec /= d;
-
-    //diffuse factor
-    float diffuseFactor = dot(lightVec, norm);
-
-    if (diffuseFactor < 0.02f)
-    {
-        return float3(0, 0, 0);
-    }
-
-    float att = pow(max(0.0f, 1.0 - (d / light.Radius)), 2.0f);
-
-    float3 toEye = normalize(CameraPosition - pos);
-    float3 v = reflect(-lightVec, norm);
-
-
-    float specFactor = pow(max(dot(v, toEye), 0.0f), 1.0f)*inSpec;
-
-    return (light.Color *att * (diffuseFactor + specFactor));
-}
-
-float3 DirectIlluminationSpotLight(float3 pos, float3 norm, SpotLight light, float inSpec)
-{
-    float3 lightPos = light.Position;
-
-    float3 lightVec = lightPos - pos;
-
-    float d = length(lightVec);
-    if (d > light.Radius)
-    {
-        return float3(0, 0, 0);
-    }
-
-    //normalize vector
-    lightVec /= d;
-
-    //diffuse factor
-    float diffuseFactor = dot(lightVec, norm);
-
-    if (diffuseFactor < 0.02f)
-    {
-        return float3(0, 0, 0);
-    }
-
-    float spot = pow(max(dot(-lightVec, light.Direction), 0.0f), light.Spot);
-
-    float att = pow(max(0.0f, 1.0 - (d / light.Radius)), 2.0f) * spot;
-
-    float3 toEye = normalize(CameraPosition - pos);
-    float3 v = reflect(-lightVec, norm);
-
-
-    float specFactor = pow(max(dot(v, toEye), 0.0f), 1.0f)*inSpec;
-
-    return (light.Color *att * (diffuseFactor + specFactor));
-}
 
 /*
 Help text
@@ -78,6 +9,39 @@ If it hits we add light, if not ignore.
 
 
 */
+
+bool CheckWorldCollision(Ray pRay, float pLengthToLight)
+{
+    float t = 0;
+    float u = 0;
+    float v = 0;
+
+
+    for (uint i = 0; i < NumOfVertices; i += 3)
+    {
+        if (CheckTriangleCollision(pRay, i, t, u, v))
+        {
+            if (t < pLengthToLight && t > kEpsilon*1000.0f) //&& data.indexTriangle != i
+            {
+                return true;
+            }
+        }
+    }
+
+
+    for (uint i = 0; i < NumOfSpheres; i++)
+    {
+        if (CheckSphereCollision(pRay, i, t))
+        {
+            if (t < pLengthToLight)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 [numthreads(32, 32, 1)]
 void CS(uint3 threadID : SV_DispatchThreadID)
@@ -107,11 +71,11 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         normal = normalize(v0.Normal * w + v1.Normal * data.u + v2.Normal * data.v);
         float2 uvCord = v0.TexCord * w + v1.TexCord * data.u + v2.TexCord * data.v;
         matColor = meshTexture.SampleLevel(simpleSampler, uvCord, 0);
-        //matColor = float3(1, 1, 1);
     }
 
 
     float3 finalColor = matColor * 0.1f;
+
     // For each light
     for (uint i = 0; i < NumOfPointLights; i++)
     {
@@ -121,45 +85,11 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         newRay.Direction = normalize(light.Position - data.hitPosition);
         float lengthToLight = length(light.Position - data.hitPosition);
 
-        float t = 0;
-        float u = 0;
-        float v = 0;
-        bool hit = false;
-
-        
-        for (uint i = 0; i < NumOfVertices; i += 3)
-        {
-            if (CheckTriangleCollision(newRay, i, t, u, v))
-            {
-                if (t < lengthToLight && t > kEpsilon*1000.0f) //&& data.indexTriangle != i
-                {
-                    hit = true;
-                    break;
-                }
-            }
-        }
-
-        
-        for (uint i = 0; i < NumOfSpheres; i++)
-        {
-            if (CheckSphereCollision(newRay, i, t))
-            {
-                if (t < lengthToLight)
-                {
-                    hit = true;
-                    break;
-                }
-            }
-        }
-        
-
-
 
         // Add light
-        if (!hit)
+        if (!CheckWorldCollision(newRay, lengthToLight))
         {
             finalColor += DirectIlluminationPointLight(data.hitPosition, normal, light, 0.5f) * matColor;
-            //finalColor += float3(9, 9, 9)* matColor;
         }
     }
 
@@ -172,45 +102,11 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         newRay.Direction = normalize(light.Position - data.hitPosition);
         float lengthToLight = length(light.Position - data.hitPosition);
 
-        float t = 0;
-        float u = 0;
-        float v = 0;
-        bool hit = false;
-
-
-        for (uint i = 0; i < NumOfVertices; i += 3)
-        {
-            if (CheckTriangleCollision(newRay, i, t, u, v))
-            {
-                if (t < lengthToLight && t > kEpsilon*1000.0f) //&& data.indexTriangle != i
-                {
-                    hit = true;
-                    break;
-                }
-            }
-        }
-
-
-        for (uint i = 0; i < NumOfSpheres; i++)
-        {
-            if (CheckSphereCollision(newRay, i, t))
-            {
-                if (t < lengthToLight)
-                {
-                    hit = true;
-                    break;
-                }
-            }
-        }
-
-
-
 
         // Add light
-        if (!hit)
+        if (!CheckWorldCollision(newRay, lengthToLight))
         {
             finalColor += DirectIlluminationSpotLight(data.hitPosition, normal, spotLights[0], 0.5f) * matColor;
-            //finalColor += float3(9, 9, 9)* matColor;
         }
     }
 
