@@ -118,7 +118,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     data.reflection = 0.5f;
     colorData[index] = data;
 
-    output[threadID.xy] = float4(finalColor, 0);
+    //output[threadID.xy] = float4(finalColor, 0);
 }
 
 

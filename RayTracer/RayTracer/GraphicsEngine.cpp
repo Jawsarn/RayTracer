@@ -252,7 +252,6 @@ HRESULT GraphicsEngine::InitializeShaders()
 
 HRESULT GraphicsEngine::InitializeBuffers()
 {
-    m_preSSTexture = m_computeWrapper->CreateTexture(DXGI_FORMAT_R8G8B8A8_UNORM, WINDOW_DRAW_SIZE_X, WINDOW_DRAW_SIZE_Y, WINDOW_DRAW_SIZE_X, nullptr);
     m_rayBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Ray), WINDOW_DRAW_SIZE_X*WINDOW_DRAW_SIZE_Y, true, true, nullptr);
     m_colorDataBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ColorData), WINDOW_DRAW_SIZE_X*WINDOW_DRAW_SIZE_Y, true, true, nullptr);
 
@@ -528,9 +527,7 @@ void GraphicsEngine::Render()
 
     ID3D11UnorderedAccessView* t_rays = m_rayBuffer->GetUnorderedAccessView();
     ID3D11UnorderedAccessView* t_colordata = m_colorDataBuffer->GetUnorderedAccessView();
-    ID3D11UnorderedAccessView* t_preSSTextureUAV = m_preSSTexture->GetUnorderedAccessView();
     
-    m_deviceContext->CSSetUnorderedAccessViews(0, 1, &t_preSSTextureUAV, nullptr);
     m_deviceContext->CSSetUnorderedAccessViews(1, 1, &t_rays, nullptr);
     m_deviceContext->CSSetUnorderedAccessViews(2, 1, &t_colordata, nullptr);
 
@@ -545,10 +542,6 @@ void GraphicsEngine::Render()
     // Color
     m_coloringShader->Set();
     m_deviceContext->Dispatch(x, y, 1);
-
-    // Light calculations
-    //m_lightCalcShader->Set();
-    //m_deviceContext->Dispatch(x, y, 1);
 
     // For number of bounces
     for (size_t i = 0; i < m_numBounces; i++)
@@ -565,17 +558,9 @@ void GraphicsEngine::Render()
         m_coloringShader->Set();
         m_deviceContext->Dispatch(x, y, 1);
 
-        // Light calculations
-        //m_lightCalcShader->Set();
-        //m_deviceContext->Dispatch(x, y, 1);
-
     }
     
     // Supersample
-    ID3D11UnorderedAccessView* t_nullView = nullptr;
-    ID3D11ShaderResourceView* t_preSSTextureSRV = m_preSSTexture->GetResourceView();
-    m_deviceContext->CSSetUnorderedAccessViews(0, 1, &t_nullView, nullptr);
-    m_deviceContext->CSSetShaderResources(0, 1, &t_preSSTextureSRV);
     m_deviceContext->CSSetUnorderedAccessViews(7, 1, &m_backBufferUAV, nullptr);
 
     m_ssShader->Set();

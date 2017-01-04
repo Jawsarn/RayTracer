@@ -80,8 +80,6 @@ static const float kEpsilon = 1e-8;
 
 
 // Global memory resources
-// TODO Check difference from changing color on backbuffer then variable in Rays
-RWTexture2D<float4> output : register(u0);
 RWStructuredBuffer<Ray> rays : register(u1);
 RWStructuredBuffer<ColorData> colorData : register(u2);
 
@@ -92,5 +90,7 @@ StructuredBuffer<SpotLight> spotLights : register(t8);
 
 Texture2D meshTexture : register(t6);
 Texture2D normalMap : register(t9);
+
+RWTexture2D<float4> ssOutput : register(u7);
 
 SamplerState simpleSampler : register(s0);

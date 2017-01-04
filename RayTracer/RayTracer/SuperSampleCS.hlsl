@@ -1,13 +1,4 @@
-
-cbuffer ConstantBuffer : register(b0)
-{
-    matrix Proj;
-    uint2 ScreenDimensions; //width height
-    float2 DoubleScreenByDimension;
-};
-
-Texture2D<float4> output : register(t0);
-RWTexture2D<float4> ssOutput : register(u7);
+#include "Common.fx"
 
 [numthreads(32, 32, 1)]
 void CS( uint3 threadID : SV_DispatchThreadID)
@@ -16,6 +7,10 @@ void CS( uint3 threadID : SV_DispatchThreadID)
         return;
 
     uint2 xxID = threadID.xy * 2;
-    //ssOutput[threadID.xy] = output[threadID.xy];
-    ssOutput[threadID.xy] = output[xxID] + output[xxID + uint2(1, 0)] + output[xxID + uint2(0, 1)] + output[xxID + uint2(1, 1)];
+
+    uint index = xxID.y * ScreenDimensions.x + xxID.x;
+    uint indexX = (xxID.y + 1) * ScreenDimensions.x + xxID.x;
+
+    float3 color = colorData[index].color + colorData[index + 1].color + colorData[indexX].color + colorData[indexX + 1].color;
+    ssOutput[threadID.xy] = float4(color, 1);
 }

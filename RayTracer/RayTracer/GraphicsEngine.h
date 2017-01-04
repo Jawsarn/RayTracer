@@ -81,9 +81,6 @@ private:
     ComputeShader* m_lightCalcShader = NULL;
     ComputeShader* m_ssShader = NULL;
 
-    // Texture
-    ComputeTexture* m_preSSTexture;
-
     // Buffers
     ComputeBuffer* m_rayBuffer;
     ComputeBuffer* m_colorDataBuffer;

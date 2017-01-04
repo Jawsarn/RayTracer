@@ -28,8 +28,6 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         {
             if (t < maxT && newRay.lastVertexIndex != i)
             {
-                //float col = t/50.0f;
-                //output[threadID.xy] = float4(col, col, col, 0);
                 maxT = t;
                 indexTriangle = i;
                 data.u = u;
@@ -44,8 +42,6 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         {
             if (t < maxT && newRay.lastSphereIndex != i)
             {
-                //float col = t / 50.0f;
-                //output[threadID.xy] = float4(col, col, col, 0);
                 maxT = t;
                 indexTriangle = -1;
                 indexSphere = i;
