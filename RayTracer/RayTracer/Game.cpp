@@ -33,6 +33,7 @@ void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
 
     GameObject newObj;
     m_graphicsEngine->LoadObject("../../sword/Sword.obj");
+
     DirectX::XMStoreFloat4x4(&newObj.world, DirectX::XMMatrixIdentity());
     newObj.objectID = m_graphicsEngine->AddToRender(newObj.world, "../../sword/Sword.obj");
 

@@ -5,23 +5,24 @@ using namespace DirectX;
 
 ObjLoader::ObjLoader()
 {
+    materialID = 0;
 }
 
 ObjLoader::~ObjLoader()
 {
 }
 
-void ObjLoader::Load(const std::string &p_fileName, std::vector<Vertex> &o_vertices, Material &o_material)
+void ObjLoader::Load(const std::string &p_fileName, std::vector<Vertex> &o_vertices, std::vector<ObjMaterial> &o_material)
 {
     // Values
     std::vector<XMFLOAT3> vertices;
     std::vector<XMFLOAT2> uvs;
     std::vector<XMFLOAT3> normals;
 
-    // Indicies for later construction
-    std::vector<uint32_t> vertexIndices;
-    std::vector<uint32_t> uvIndices;
-    std::vector<uint32_t> normalIndices;
+    std::vector<ObjObject> objObjects;
+
+    ObjObject newObj;
+    std::string materialFileName;
 
     //Load material from
     std::string path = "";
@@ -31,7 +32,6 @@ void ObjLoader::Load(const std::string &p_fileName, std::vector<Vertex> &o_verti
     {
         path = p_fileName.substr(0, lastSlash + 1);
     }
-    std::string materialFileName;
 
 
     FILE * file;
@@ -87,15 +87,15 @@ void ObjLoader::Load(const std::string &p_fileName, std::vector<Vertex> &o_verti
                 return;
             }
 
-            vertexIndices.push_back(vertexIndex[0]);
-            vertexIndices.push_back(vertexIndex[1]);
-            vertexIndices.push_back(vertexIndex[2]);
-            uvIndices.push_back(uvIndex[0]);
-            uvIndices.push_back(uvIndex[1]);
-            uvIndices.push_back(uvIndex[2]);
-            normalIndices.push_back(normalIndex[0]);
-            normalIndices.push_back(normalIndex[1]);
-            normalIndices.push_back(normalIndex[2]);
+            newObj.vertexIndices.push_back(vertexIndex[0]);
+            newObj.vertexIndices.push_back(vertexIndex[1]);
+            newObj.vertexIndices.push_back(vertexIndex[2]);
+            newObj.uvIndices.push_back(uvIndex[0]);
+            newObj.uvIndices.push_back(uvIndex[1]);
+            newObj.uvIndices.push_back(uvIndex[2]);
+            newObj.normalIndices.push_back(normalIndex[0]);
+            newObj.normalIndices.push_back(normalIndex[1]);
+            newObj.normalIndices.push_back(normalIndex[2]);
         }
         else if (strcmp(lineHeader, "mtllib") == 0)
         {
@@ -108,39 +108,84 @@ void ObjLoader::Load(const std::string &p_fileName, std::vector<Vertex> &o_verti
             }
             materialFileName = path + std::string(matFileName);
         }
-    }
-
-    size_t numVertices = vertexIndices.size();
-    if (numVertices)
-    {
-        for (size_t k = 0; k < numVertices; k++)
+        else if (strcmp(lineHeader, "usemtl") == 0)
         {
-            uint32_t vertexIndex = vertexIndices[k];
-            uint32_t normalIndex = normalIndices[k];
-            uint32_t uvIndex = uvIndices[k];
+            char matFileName[128];
+            int outp = fscanf_s(file, "%s\n", matFileName, _countof(matFileName));
+            if (outp != 1)
+            {
+                return;
+                //I guess? 
+            }
+            if (newObj.materialName != "")
+            {
+                objObjects.push_back(newObj);
+                newObj.materialName = "";
+                newObj.vertexIndices.clear();
+                newObj.normalIndices.clear();
+                newObj.uvIndices.clear();
+            }
+            newObj.materialName = std::string(matFileName);
+        }
+        //usemtl Sword
 
-            // Create new Vertex
-            Vertex newVertex;
-            newVertex.position = vertices[vertexIndex - 1];
-            newVertex.normal = normals[normalIndex - 1];
-            newVertex.texcoord = uvs[uvIndex - 1];
+    }
+    objObjects.push_back(newObj);
 
-            o_vertices.push_back(newVertex);
+    // Read materials
+    ReadMaterial(materialFileName, o_material);
+
+    // Create the vertex list from indices
+    for (size_t objNum = 0; objNum < objObjects.size(); objNum++)
+    {
+        int materialID = 0;
+        for (size_t i = 0; i < o_material.size(); i++)
+        {
+            if (strcmp(objObjects[objNum].materialName.c_str(), o_material[i].name.c_str()) == 0)
+            {
+                materialID = o_material[i].id;
+                break;
+            }
+        }
+
+        size_t numVertices = objObjects[objNum].vertexIndices.size();
+        if (numVertices)
+        {
+            for (size_t k = 0; k < numVertices; k++)
+            {
+                uint32_t vertexIndex = objObjects[objNum].vertexIndices[k];
+                uint32_t normalIndex = objObjects[objNum].normalIndices[k];
+                uint32_t uvIndex = objObjects[objNum].uvIndices[k];
+
+                // Create new Vertex
+                Vertex newVertex;
+                newVertex.position = vertices[vertexIndex - 1];
+                newVertex.normal = normals[normalIndex - 1];
+                newVertex.texcoord = uvs[uvIndex - 1];
+                newVertex.materialID = materialID;
+                o_vertices.push_back(newVertex);
+
+                
+            }
         }
     }
     
 
 
-    o_material = ReadMaterial(materialFileName);
+
     fclose(file);
 }
 
-Material ObjLoader::ReadMaterial(std::string &p_materialFileName)
+void ObjLoader::ReadMaterial(std::string &p_materialFileName, std::vector<ObjMaterial> &o_material)
 {
-    Material r_material;
+    ObjMaterial r_material;
+    r_material.name = "";
     r_material.Ambient = XMFLOAT3(0, 0, 0);
     r_material.Diffuse = XMFLOAT3(0, 0, 0);
     r_material.Specular = XMFLOAT3(0, 0, 0);
+    r_material.specularFactor = 0;
+    r_material.transparency = 0;
+    r_material.normalTexture = "";
     r_material.diffuseTexture = "";
 
     FILE * file;
@@ -149,11 +194,21 @@ Material ObjLoader::ReadMaterial(std::string &p_materialFileName)
     if (file == NULL)
     {
         printf("Impossible to open the file !\n");
-        return r_material;
+        return;
     }
 
     while (true)
     {
+        /*
+        
+            XMFLOAT3 Ambient;
+            XMFLOAT3 Diffuse;
+            XMFLOAT3 Specular;
+            float specular;
+            float transparency; // d
+            std::string diffuseTexture;
+            std::string normalTexture;
+        */
         char lineHeader[128];
 
         // read the first word of the line
@@ -161,6 +216,32 @@ Material ObjLoader::ReadMaterial(std::string &p_materialFileName)
         if (res == EOF)
         {
             break; // EOF = End Of File. Quit the loop.
+        }
+        else if (strcmp(lineHeader, "newmtl") == 0)
+        {
+            char matFileName[128];
+            int outp = fscanf_s(file, "%s\n", matFileName, _countof(matFileName));
+            if (outp != 1)
+            {
+                return;
+                //I guess? 
+            }
+            if (r_material.name != "") // New material
+            {
+                o_material.push_back(r_material);
+                r_material.name = "";
+                r_material.Ambient = XMFLOAT3(0, 0, 0);
+                r_material.Diffuse = XMFLOAT3(0, 0, 0);
+                r_material.Specular = XMFLOAT3(0, 0, 0);
+                r_material.specularFactor = 0;
+                r_material.transparency = 0;
+                r_material.normalTexture = "";
+                r_material.diffuseTexture = "";
+            }
+
+            r_material.name = std::string(matFileName);
+            r_material.id = materialID;
+            materialID++;
         }
         else if (strcmp(lineHeader, "Ks") == 0) //diffuse color
         {
@@ -180,18 +261,40 @@ Material ObjLoader::ReadMaterial(std::string &p_materialFileName)
             fscanf_s(file, "%f %f %f\n", &ambCol.x, &ambCol.y, &ambCol.z);
             r_material.Diffuse = ambCol;
         }
+        else if (strcmp(lineHeader, "Ns") == 0) //ambient
+        {
+            float specFac;
+            fscanf_s(file, "%f\n", &specFac);
+            r_material.specularFactor = specFac;
+        }
+        else if (strcmp(lineHeader, "d") == 0) //ambient
+        {
+            float transp;
+            fscanf_s(file, "%f\n", &transp);
+            r_material.transparency = transp;
+        }
         else if (strcmp(lineHeader, "map_Kd") == 0)
         {
             char temp[128];
             int outp = fscanf_s(file, "%s\n", temp, _countof(temp));
             if (outp != 1)
             {
-                return r_material;
+                return;
                 //I guess? 
             }
             r_material.diffuseTexture = std::string(temp);
         }
+        else if (strcmp(lineHeader, "bump") == 0)
+        {
+            char temp[128];
+            int outp = fscanf_s(file, "%s\n", temp, _countof(temp));
+            if (outp != 1)
+            {
+                return;
+                //I guess? 
+            }
+            r_material.normalTexture = std::string(temp);
+        }
     }
-
-    return r_material;
+    o_material.push_back(r_material);
 }

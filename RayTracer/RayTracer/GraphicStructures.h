@@ -10,6 +10,7 @@ struct Vertex
     XMFLOAT3 normal;
     XMFLOAT3 tangent;
     XMFLOAT2 texcoord;
+    int materialID;
 };
 
 struct Ray
@@ -58,19 +59,28 @@ struct SpotLight
     float Spot;
 };
 
-struct ShaderMaterial
+struct ObjMaterial
 {
-    XMFLOAT4 Ambient;
-    XMFLOAT4 Diffuse;
-    XMFLOAT4 Specular;
+    int id;
+    std::string name;
+    XMFLOAT3 Ambient;
+    XMFLOAT3 Diffuse;
+    XMFLOAT3 Specular;
+    float specularFactor;
+    float transparency; // d
+    std::string diffuseTexture;
+    std::string normalTexture;
 };
 
-struct Material
+struct ShaderMaterial
 {
     XMFLOAT3 Ambient;
     XMFLOAT3 Diffuse;
     XMFLOAT3 Specular;
-    std::string diffuseTexture;
+    float specularFactor;
+    float transparency; // d
+    int diffuseTexture;
+    int normalTexture;
 };
 
 

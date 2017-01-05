@@ -50,6 +50,7 @@ private:
     HRESULT InitializeBackBuffer();
     HRESULT InitializeShaders();
     HRESULT InitializeBuffers();
+    HRESULT InitializeTextureArrays();
 
     HRESULT InitializeSamplers();
 
@@ -86,6 +87,14 @@ private:
     ComputeBuffer* m_colorDataBuffer;
     ID3D11Buffer* m_constantBuffer;
     ID3D11Buffer* m_perFrameBuffer;
+
+    // Texturebuffers
+    ID3D11Texture2D* m_diffuseTextureArray;
+    ID3D11ShaderResourceView* m_diffuseTextureArraySRV;
+    ID3D11Texture2D* m_normalTextureArray;
+    ID3D11ShaderResourceView* m_normalTextureArraySRV;
+    UINT m_curDiffuseIndex;
+    UINT m_curNormalIndex;
 
     // Samplers
     ID3D11SamplerState* m_simpleSampler;

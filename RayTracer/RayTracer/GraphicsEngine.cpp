@@ -53,9 +53,16 @@ GraphicsEngine::GraphicsEngine(HINSTANCE p_hInstance, int p_nCmdShow, WNDPROC p_
     if (FAILED(hr))
         throw std::runtime_error("Startup error");
 
+    hr = InitializeTextureArrays();
+    if (FAILED(hr))
+        throw std::runtime_error("Startup error");
+
     hr = InitializeSamplers();
 
     m_numBounces = 0;
+    m_curDiffuseIndex = 0;
+    m_curNormalIndex = 0;
+    m_numVertices = 0;
 }
 
 
@@ -272,6 +279,63 @@ HRESULT GraphicsEngine::InitializeBuffers()
     return S_OK;
 }
 
+HRESULT GraphicsEngine::InitializeTextureArrays()
+{
+    D3D11_TEXTURE2D_DESC desc;
+    desc.Width = 1024;
+    desc.Height = 1024;
+    desc.MipLevels = 1;
+    desc.ArraySize = 50;
+    desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+    desc.MiscFlags = 0;
+
+    HRESULT hr = m_device->CreateTexture2D(&desc, nullptr, &m_diffuseTextureArray);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error("Error loading texture");
+    }
+
+    hr = m_device->CreateTexture2D(&desc, nullptr, &m_normalTextureArray);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error("Error loading texture");
+    }
+
+    D3D11_TEXTURE2D_DESC td;
+    m_diffuseTextureArray->GetDesc(&td);
+
+    //init view description
+    D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+    ZeroMemory(&viewDesc, sizeof(viewDesc));
+
+    viewDesc.Format = td.Format;
+    viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2DARRAY;
+    viewDesc.Texture2D.MipLevels = td.MipLevels;
+    viewDesc.Texture2DArray.ArraySize = td.ArraySize;
+
+    hr = m_device->CreateShaderResourceView(m_diffuseTextureArray, &viewDesc, &m_diffuseTextureArraySRV);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error("Error loading texture");
+    }
+
+    hr = m_device->CreateShaderResourceView(m_normalTextureArray, &viewDesc, &m_normalTextureArraySRV);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error("Error loading texture");
+    }
+
+    m_deviceContext->CSSetShaderResources(6, 1, &m_diffuseTextureArraySRV);
+    m_deviceContext->CSSetShaderResources(9, 1, &m_normalTextureArraySRV);
+
+    return hr;
+}
+
 HRESULT GraphicsEngine::InitializeSamplers()
 {
     HRESULT hr;
@@ -299,52 +363,54 @@ HRESULT GraphicsEngine::InitializeSamplers()
 void GraphicsEngine::LoadObject(const std::string & p_name)
 {
     std::vector<Vertex> t_vertices;
-    Material t_material;
+    std::vector<ObjMaterial> t_material;
 
     m_objLoader->Load(p_name, t_vertices, t_material);
 
 
-
-    //float z = -5;
-    //
-    //// Add big square
-    //Vertex newVert;
-    //newVert.position = XMFLOAT3(-10, 10, z); // Top left
-    //newVert.normal = XMFLOAT3(0, 0, 1);
-    //newVert.texcoord = XMFLOAT2(0, 0);
-    //t_vertices.push_back(newVert);
-
-    //newVert.position = XMFLOAT3(10, 10, z); // Top right
-    //newVert.normal = XMFLOAT3(0, 0, 1);
-    //newVert.texcoord = XMFLOAT2(1, 0);
-    //t_vertices.push_back(newVert);
-
-    //newVert.position = XMFLOAT3(-10, -10, z); // Bot left
-    //newVert.normal = XMFLOAT3(0, 0, 1);
-    //newVert.texcoord = XMFLOAT2(0, 1);
-    //t_vertices.push_back(newVert);
-
-    //newVert.position = XMFLOAT3(10, 10, z); // Top right
-    //newVert.normal = XMFLOAT3(0, 0, 1);
-    //newVert.texcoord = XMFLOAT2(1, 0);
-    //t_vertices.push_back(newVert);
-
-    //newVert.position = XMFLOAT3(10, -10, z); // Bot right
-    //newVert.normal = XMFLOAT3(0, 0, 1);
-    //newVert.texcoord = XMFLOAT2(1, 1);
-    //t_vertices.push_back(newVert);
-
-    //newVert.position = XMFLOAT3(-10, -10, z);
-    //newVert.normal = XMFLOAT3(0, 0, 1);
-    //newVert.texcoord = XMFLOAT2(0, 1);
-    //t_vertices.push_back(newVert);
+    /*
+    float z = -5;
     
+    // Add big square
+    Vertex newVert;
+    newVert.position = XMFLOAT3(-10, 10, z); // Top left
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(0, 0);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(10, 10, z); // Top right
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(1, 0);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(-10, -10, z); // Bot left
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(0, 1);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(10, 10, z); // Top right
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(1, 0);
+    t_vertices.push_back(newVert);
+
+    newVert.position = XMFLOAT3(10, -10, z); // Bot right
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(1, 1);
+    t_vertices.push_back(newVert);
+
+
+    newVert.position = XMFLOAT3(-10, -10, z);
+    newVert.normal = XMFLOAT3(0, 0, 1);
+    newVert.texcoord = XMFLOAT2(0, 1);
+    t_vertices.push_back(newVert);
+    */
 
     // http://www.rastertek.com/dx11tut20.html
     // + 3D Game Programming with DirectX 11
-    for (size_t i = 0; i < t_vertices.size(); i+=3)
+
+    for (size_t i = 0; i < t_vertices.size(); i += 3)
     {
-        
+
         XMFLOAT3 Aver = t_vertices[i].position;
         XMFLOAT3 Bver = t_vertices[i + 1].position;
         XMFLOAT3 Cver = t_vertices[i + 2].position;
@@ -361,7 +427,7 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
         XMFLOAT2 texU, texV;
         texU = XMFLOAT2(Btex.x - Atex.x, Ctex.x - Atex.x);
         texV = XMFLOAT2(Btex.y - Atex.y, Ctex.y - Atex.y);
-        
+
         // Denominator
         float den = 1.0f / (texU.x * texV.y - texU.y * texV.x);
 
@@ -384,55 +450,81 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
         t_vertices[i + 1].tangent = tangent;
         t_vertices[i + 2].tangent = tangent;
     }
+    
 
-    ShaderMaterial t_mat;
-    t_mat.Ambient = DirectX::XMFLOAT4(t_material.Ambient.x, t_material.Ambient.y, t_material.Ambient.z, 0);
-    t_mat.Diffuse = DirectX::XMFLOAT4(t_material.Diffuse.x, t_material.Diffuse.y, t_material.Diffuse.z, 0);
-    t_mat.Specular = DirectX::XMFLOAT4(t_material.Specular.x, t_material.Specular.y, t_material.Specular.z, 0);
-
-
-
-
-    RenderObject newRenderObj;
-    newRenderObj.numOfVertices = t_vertices.size();
-    newRenderObj.meshBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Vertex), t_vertices.size(), true, false, &t_vertices[0]);
-    newRenderObj.materialBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ShaderMaterial), 1, true, false, &t_mat);
-
+    // Get path
     std::string path = "";
-
     size_t lastSlash = p_name.find_last_of("/");
     if (lastSlash != std::string::npos)
     {
         path = p_name.substr(0, lastSlash + 1);
     }
-    t_material.diffuseTexture = "stoneDiffuse.dds";
-    std::string fullPath =  path + t_material.diffuseTexture;
-    std::wstring t_fullPath;
-    t_fullPath.assign(fullPath.begin(), fullPath.end());
 
-    HRESULT hr = CreateDDSTextureFromFile(m_device, t_fullPath.c_str(), nullptr, &newRenderObj.texture);
-    if (FAILED(hr))
+
+    std::vector<ShaderMaterial> t_shaderMaterials;
+    // Load each material
+    for (size_t i = 0; i < t_material.size(); i++)
     {
-        throw std::runtime_error("Error loading texture");
+        // Load the textures to the 2d arrays
+        ID3D11Resource* testRes = nullptr;
+        ID3D11ShaderResourceView* texture;
+        ID3D11ShaderResourceView* normTexture;
+
+        std::string fullPath = path + t_material[i].diffuseTexture;
+        std::wstring t_fullPath;
+        t_fullPath.assign(fullPath.begin(), fullPath.end());
+
+        HRESULT hr = CreateDDSTextureFromFile(m_device, t_fullPath.c_str(), &testRes, &texture);
+        if (FAILED(hr))
+        {
+            throw std::runtime_error("Error loading texture");
+        }
+
+        m_deviceContext->CopySubresourceRegion(m_diffuseTextureArray, m_curDiffuseIndex, 0, 0, 0, testRes, 0, nullptr);
+        m_curDiffuseIndex++;
+        
+        int normalTextureID = -1;
+        if (t_material[i].normalTexture != "")
+        {
+
+            fullPath = path + t_material[i].normalTexture;
+            t_fullPath.assign(fullPath.begin(), fullPath.end());
+            ID3D11ShaderResourceView* t_normTexture;
+            hr = CreateDDSTextureFromFile(m_device, t_fullPath.c_str(), &testRes, &normTexture);
+            if (FAILED(hr))
+            {
+                throw std::runtime_error("Error loading texture");
+            }
+            m_deviceContext->CopySubresourceRegion(m_normalTextureArray, m_curNormalIndex, 0, 0, 0, testRes, 0, nullptr);
+            normalTextureID = m_curNormalIndex;
+            m_curNormalIndex++;
+        }
+
+
+        // Create a material
+        ShaderMaterial t_mat;
+        t_mat.Ambient = t_material[i].Ambient;
+        t_mat.Diffuse = t_material[i].Diffuse;
+        t_mat.diffuseTexture = m_curDiffuseIndex - 1;
+        t_mat.normalTexture = normalTextureID;
+        t_mat.Specular = t_material[i].Specular;
+        t_mat.specularFactor = t_material[i].specularFactor;
+        t_mat.transparency = t_material[i].transparency;
+        t_shaderMaterials.push_back(t_mat);
     }
 
-    fullPath = path + "stoneNormal.dds";
-    t_fullPath.assign(fullPath.begin(), fullPath.end());
-    ID3D11ShaderResourceView* t_normTexture;
-    hr = CreateDDSTextureFromFile(m_device, t_fullPath.c_str(), nullptr, &t_normTexture);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error("Error loading texture");
-    }
 
-    m_numVertices = t_vertices.size();
+
+    ComputeBuffer* matBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ShaderMaterial), t_shaderMaterials.size(), true, false, &t_shaderMaterials[0]);
+    ComputeBuffer* meshBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Vertex), t_vertices.size(), true, false, &t_vertices[0]);
+    m_numVertices += t_vertices.size();
 
     // Load to graphics
     // TODO change this,
-    ID3D11ShaderResourceView* resourceView = newRenderObj.meshBuffer->GetResourceView();
-    m_deviceContext->CSSetShaderResources(3, 1, &resourceView);
-    m_deviceContext->CSSetShaderResources(6, 1, &newRenderObj.texture);
-    m_deviceContext->CSSetShaderResources(9, 1, &t_normTexture);
+    ID3D11ShaderResourceView* meshView = meshBuffer->GetResourceView();
+    ID3D11ShaderResourceView* matView = matBuffer->GetResourceView();
+    m_deviceContext->CSSetShaderResources(2, 1, &meshView);
+    m_deviceContext->CSSetShaderResources(3, 1, &matView);
 }
 
 void GraphicsEngine::CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color)

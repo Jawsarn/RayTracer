@@ -7,6 +7,10 @@ Help text
 For each object we hit, we send a ray to each light and see if it hits or misses.
 If it hits we add light, if not ignore.
 
+TODO
+Fix that not all objects need normalmap
+Look at what happens when no hits, and reflection
+
 
 */
 
@@ -43,22 +47,6 @@ bool CheckWorldCollision(Ray pRay, float pLengthToLight)
     return false;
 }
 
-/*
-float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, float3 tangentW)
-    {
-    // Uncompress each component from [0,1] to [-1,1].
-    float3 normalT = 2.0f*normalMapSample - 1.0f;
-    // Build orthonormal basis.
-    float3 N = unitNormalW;
-    float3 T = normalize(tangentW - dot(tangentW, N)*N);
-    float3 B = cross(N, T);
-    float3x3 TBN = float3x3(T, B, N);
-    // Transform from tangent space to world space.
-    float3 bumpedNormalW = mul(normalT, TBN);
-    return bumpedNormalW;
-}
-
-*/
 
 // Created based from 3D Game Programming with DirectX 11
 float3 CalculateNormalFromNormalMap(float3 normalFromMap, float3 worldNormal, float3 worldTangent)
@@ -109,13 +97,23 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         normal = normalize(v0.Normal * w + v1.Normal * data.u + v2.Normal * data.v);
         float3 tangent = normalize(v0.Tangent * w + v1.Tangent * data.u + v2.Tangent * data.v);
         float2 uvCord = v0.TexCord * w + v1.TexCord * data.u + v2.TexCord * data.v;
-        matColor = meshTexture.SampleLevel(simpleSampler, uvCord, 0);
+
+
+        Material curMat = materials[v0.materialID];
+
+        matColor = meshTexture.SampleLevel(simpleSampler, float3(uvCord, curMat.diffuseTexture), 0);
         //matColor = float3(0.5f, 0.5f, 0.5f);
         // Get normal from normalmap
-        float3 nMapNormal = normalMap.SampleLevel(simpleSampler, uvCord, 0);
-        normal = CalculateNormalFromNormalMap(nMapNormal, normal, tangent);
-        //normal = nMapNormal;
-        //matColor = tangent;
+        if (curMat.normalTexture != -1)
+        {
+            float3 nMapNormal = normalMap.SampleLevel(simpleSampler, float3(uvCord, curMat.normalTexture), 0);
+            normal = CalculateNormalFromNormalMap(nMapNormal, normal, tangent);
+            //matColor = normal;
+            //normal = CalculateNormalFromNormalMap(nMapNormal, normal, tangent);
+            //normal = nMapNormal;
+            //matColor = tangent;
+            //matColor = nMapNormal;
+        }
     }
 
     float3 finalColor = matColor * 0.1f;
