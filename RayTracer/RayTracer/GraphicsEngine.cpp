@@ -303,45 +303,93 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
 
     m_objLoader->Load(p_name, t_vertices, t_material);
 
+
+
+    //float z = -5;
+    //
+    //// Add big square
+    //Vertex newVert;
+    //newVert.position = XMFLOAT3(-10, 10, z); // Top left
+    //newVert.normal = XMFLOAT3(0, 0, 1);
+    //newVert.texcoord = XMFLOAT2(0, 0);
+    //t_vertices.push_back(newVert);
+
+    //newVert.position = XMFLOAT3(10, 10, z); // Top right
+    //newVert.normal = XMFLOAT3(0, 0, 1);
+    //newVert.texcoord = XMFLOAT2(1, 0);
+    //t_vertices.push_back(newVert);
+
+    //newVert.position = XMFLOAT3(-10, -10, z); // Bot left
+    //newVert.normal = XMFLOAT3(0, 0, 1);
+    //newVert.texcoord = XMFLOAT2(0, 1);
+    //t_vertices.push_back(newVert);
+
+    //newVert.position = XMFLOAT3(10, 10, z); // Top right
+    //newVert.normal = XMFLOAT3(0, 0, 1);
+    //newVert.texcoord = XMFLOAT2(1, 0);
+    //t_vertices.push_back(newVert);
+
+    //newVert.position = XMFLOAT3(10, -10, z); // Bot right
+    //newVert.normal = XMFLOAT3(0, 0, 1);
+    //newVert.texcoord = XMFLOAT2(1, 1);
+    //t_vertices.push_back(newVert);
+
+    //newVert.position = XMFLOAT3(-10, -10, z);
+    //newVert.normal = XMFLOAT3(0, 0, 1);
+    //newVert.texcoord = XMFLOAT2(0, 1);
+    //t_vertices.push_back(newVert);
+    
+
+    // http://www.rastertek.com/dx11tut20.html
+    // + 3D Game Programming with DirectX 11
+    for (size_t i = 0; i < t_vertices.size(); i+=3)
+    {
+        
+        XMFLOAT3 Aver = t_vertices[i].position;
+        XMFLOAT3 Bver = t_vertices[i + 1].position;
+        XMFLOAT3 Cver = t_vertices[i + 2].position;
+
+        XMFLOAT2 Atex = t_vertices[i].texcoord;
+        XMFLOAT2 Btex = t_vertices[i + 1].texcoord;
+        XMFLOAT2 Ctex = t_vertices[i + 2].texcoord;
+
+        // Create A->B, A->C vectors
+        XMFLOAT3 AtoBver, AtoCver;
+        XMStoreFloat3(&AtoBver, XMLoadFloat3(&Bver) - XMLoadFloat3(&Aver));
+        XMStoreFloat3(&AtoCver, XMLoadFloat3(&Cver) - XMLoadFloat3(&Aver));
+
+        XMFLOAT2 texU, texV;
+        texU = XMFLOAT2(Btex.x - Atex.x, Ctex.x - Atex.x);
+        texV = XMFLOAT2(Btex.y - Atex.y, Ctex.y - Atex.y);
+        
+        // Denominator
+        float den = 1.0f / (texU.x * texV.y - texU.y * texV.x);
+
+        XMFLOAT3 tangent;
+        tangent = XMFLOAT3(AtoBver.x * texV.y - AtoBver.x * texV.x, AtoBver.y * texV.y - AtoBver.y * texV.x, AtoBver.z * texV.y - AtoBver.z * texV.x);
+        tangent.x *= den;
+        tangent.y *= den;
+        tangent.z *= den;
+
+        // This works...
+        tangent = AtoBver;
+
+        float length = sqrt((tangent.x * tangent.x) + (tangent.y * tangent.y) + (tangent.z * tangent.z));
+
+        tangent.x /= length;
+        tangent.y /= length;
+        tangent.z /= length;
+
+        t_vertices[i].tangent = tangent;
+        t_vertices[i + 1].tangent = tangent;
+        t_vertices[i + 2].tangent = tangent;
+    }
+
     ShaderMaterial t_mat;
     t_mat.Ambient = DirectX::XMFLOAT4(t_material.Ambient.x, t_material.Ambient.y, t_material.Ambient.z, 0);
     t_mat.Diffuse = DirectX::XMFLOAT4(t_material.Diffuse.x, t_material.Diffuse.y, t_material.Diffuse.z, 0);
     t_mat.Specular = DirectX::XMFLOAT4(t_material.Specular.x, t_material.Specular.y, t_material.Specular.z, 0);
 
-    float z = -5;
-    /*
-    // Add big square
-    Vertex newVert;
-    newVert.position = XMFLOAT3(-10, 10, z); // Top left
-    newVert.normal = XMFLOAT3(0, 0, 1);
-    newVert.texcoord = XMFLOAT2(0, 0);
-    t_vertices.push_back(newVert);
-
-    newVert.position = XMFLOAT3(10, 10, z); // Top right
-    newVert.normal = XMFLOAT3(0, 0, 1);
-    newVert.texcoord = XMFLOAT2(1, 0);
-    t_vertices.push_back(newVert);
-
-    newVert.position = XMFLOAT3(-10, -10, z); // Bot left
-    newVert.normal = XMFLOAT3(0, 0, 1);
-    newVert.texcoord = XMFLOAT2(0, 1);
-    t_vertices.push_back(newVert);
-
-    newVert.position = XMFLOAT3(10, 10, z); // Top right
-    newVert.normal = XMFLOAT3(0, 0, 1);
-    newVert.texcoord = XMFLOAT2(1, 0);
-    t_vertices.push_back(newVert);
-
-    newVert.position = XMFLOAT3(10, -10, z); // Bot right
-    newVert.normal = XMFLOAT3(0, 0, 1);
-    newVert.texcoord = XMFLOAT2(1, 1);
-    t_vertices.push_back(newVert);
-
-    newVert.position = XMFLOAT3(-10, -10, z); 
-    newVert.normal = XMFLOAT3(0, 0, 1);
-    newVert.texcoord = XMFLOAT2(0, 1);
-    t_vertices.push_back(newVert);
-    */
 
 
 
@@ -357,6 +405,7 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
     {
         path = p_name.substr(0, lastSlash + 1);
     }
+    t_material.diffuseTexture = "stoneDiffuse.dds";
     std::string fullPath =  path + t_material.diffuseTexture;
     std::wstring t_fullPath;
     t_fullPath.assign(fullPath.begin(), fullPath.end());
@@ -528,8 +577,8 @@ void GraphicsEngine::Render()
     ID3D11UnorderedAccessView* t_rays = m_rayBuffer->GetUnorderedAccessView();
     ID3D11UnorderedAccessView* t_colordata = m_colorDataBuffer->GetUnorderedAccessView();
     
-    m_deviceContext->CSSetUnorderedAccessViews(1, 1, &t_rays, nullptr);
-    m_deviceContext->CSSetUnorderedAccessViews(2, 1, &t_colordata, nullptr);
+    m_deviceContext->CSSetUnorderedAccessViews(0, 1, &t_rays, nullptr);
+    m_deviceContext->CSSetUnorderedAccessViews(1, 1, &t_colordata, nullptr);
 
     // Init rays
     m_initRaysShader->Set();

@@ -56,7 +56,6 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     data.direction = newRay.Direction;
     data.hitPosition = newRay.Position + newRay.Direction*maxT;
     data.color = newRay.Color;
-    data.t = t;
     data.reflection = newRay.reflectionFactor;
 
     colorData[index] = data;

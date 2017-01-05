@@ -5,8 +5,8 @@ LightManager* LightManager::m_singleton = nullptr;
 
 LightManager::LightManager()
 {
-    m_lights.push_back(Light(XMFLOAT3(1, 0, 0), 15, XMFLOAT3(1, 1, 1)));
-    m_lights.push_back(Light(XMFLOAT3(0, 0, 1), 15, XMFLOAT3(1, 1, 1)));
+    m_lightIntensity = 0.20f;
+    m_lights.push_back(Light(XMFLOAT3(1, 0, 0), 15, XMFLOAT3(m_lightIntensity, m_lightIntensity, m_lightIntensity)));
 
     for (size_t i = 0; i < m_lights.size(); i++)
     {
@@ -32,7 +32,7 @@ LightManager * LightManager::GetInstance()
 
 void LightManager::AddLight()
 {
-    m_lights.push_back(Light(XMFLOAT3(1, 0, 0), 15, XMFLOAT3(1, 1, 1)));
+    m_lights.push_back(Light(XMFLOAT3(1, 0, 0), 15, XMFLOAT3(m_lightIntensity, m_lightIntensity, m_lightIntensity)));
     int index = m_lights.size() - 1;
     GraphicsEngine::GetInstance()->CreatePointLight(m_lights[index].pos, m_lights[index].radius, m_lights[index].color);
 }

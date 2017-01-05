@@ -33,7 +33,6 @@ struct ColorData
     float reflection;
     float u;
     float v;
-    float t;
 };
 
 struct Sphere

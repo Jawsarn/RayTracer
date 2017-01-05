@@ -43,6 +43,44 @@ bool CheckWorldCollision(Ray pRay, float pLengthToLight)
     return false;
 }
 
+/*
+float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, float3 tangentW)
+    {
+    // Uncompress each component from [0,1] to [-1,1].
+    float3 normalT = 2.0f*normalMapSample - 1.0f;
+    // Build orthonormal basis.
+    float3 N = unitNormalW;
+    float3 T = normalize(tangentW - dot(tangentW, N)*N);
+    float3 B = cross(N, T);
+    float3x3 TBN = float3x3(T, B, N);
+    // Transform from tangent space to world space.
+    float3 bumpedNormalW = mul(normalT, TBN);
+    return bumpedNormalW;
+}
+
+*/
+
+// Created based from 3D Game Programming with DirectX 11
+float3 CalculateNormalFromNormalMap(float3 normalFromMap, float3 worldNormal, float3 worldTangent)
+{
+    // Transform from color values
+    float3 realNMapNormal = 2.0f*normalFromMap - 1.0f;
+
+    // Get real tangent, because of interpolation
+    float3 tangentN = normalize(worldTangent - dot(worldTangent, worldNormal) * worldNormal);
+
+    // Get binormal
+    float3 binormal = cross(worldNormal, tangentN);
+
+    // Create matrix, not sure why tangent is first?
+    float3x3 textureMatrix = float3x3(tangentN, binormal, worldNormal);
+
+    // Tranform sampled normal
+    float3 sampleNormal = mul(realNMapNormal, textureMatrix);
+    return sampleNormal;
+
+}
+
 [numthreads(32, 32, 1)]
 void CS(uint3 threadID : SV_DispatchThreadID)
 {
@@ -69,10 +107,16 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         Vertex v2 = vertices[data.indexTriangle + 2];
         float w = (1 - data.u - data.v);
         normal = normalize(v0.Normal * w + v1.Normal * data.u + v2.Normal * data.v);
+        float3 tangent = normalize(v0.Tangent * w + v1.Tangent * data.u + v2.Tangent * data.v);
         float2 uvCord = v0.TexCord * w + v1.TexCord * data.u + v2.TexCord * data.v;
         matColor = meshTexture.SampleLevel(simpleSampler, uvCord, 0);
+        //matColor = float3(0.5f, 0.5f, 0.5f);
+        // Get normal from normalmap
+        float3 nMapNormal = normalMap.SampleLevel(simpleSampler, uvCord, 0);
+        normal = CalculateNormalFromNormalMap(nMapNormal, normal, tangent);
+        //normal = nMapNormal;
+        //matColor = tangent;
     }
-
 
     float3 finalColor = matColor * 0.1f;
 
@@ -111,7 +155,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     }
 
 
-    finalColor = finalColor*data.reflection + data.color*(1.0f-data.reflection);
+    finalColor = finalColor*data.reflection + data.color;
 
     data.direction = normalize(reflect( data.direction, normal));
     data.color = finalColor;

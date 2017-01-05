@@ -42,7 +42,6 @@ struct ColorData
     float reflection;
     float u;
     float v;
-    float t;
 };
 
 struct Vertex
@@ -80,8 +79,8 @@ static const float kEpsilon = 1e-8;
 
 
 // Global memory resources
-RWStructuredBuffer<Ray> rays : register(u1);
-RWStructuredBuffer<ColorData> colorData : register(u2);
+RWStructuredBuffer<Ray> rays : register(u0);
+RWStructuredBuffer<ColorData> colorData : register(u1);
 
 StructuredBuffer<Vertex> vertices: register(t3);
 StructuredBuffer<Sphere> spheres : register(t4);

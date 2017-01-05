@@ -32,5 +32,6 @@ private:
  
     LightManager();
     ~LightManager();
+    float m_lightIntensity;
 };
 
