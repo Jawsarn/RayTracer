@@ -65,6 +65,7 @@ GraphicsEngine::GraphicsEngine(HINSTANCE p_hInstance, int p_nCmdShow, WNDPROC p_
     m_curDiffuseIndex = 0;
     m_curNormalIndex = 0;
     m_numVertices = 0;
+    printFrame = false;
 }
 
 
@@ -434,13 +435,11 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
         float den = 1.0f / (texU.x * texV.y - texU.y * texV.x);
 
         XMFLOAT3 tangent;
-        tangent = XMFLOAT3(AtoBver.x * texV.y - AtoBver.x * texV.x, AtoBver.y * texV.y - AtoBver.y * texV.x, AtoBver.z * texV.y - AtoBver.z * texV.x);
+        tangent = XMFLOAT3(AtoBver.x * texV.y - AtoCver.x * texV.x, AtoBver.y * texV.y - AtoCver.y * texV.x, AtoBver.z * texV.y - AtoCver.z * texV.x);
         tangent.x *= den;
         tangent.y *= den;
         tangent.z *= den;
 
-        // This works...
-        tangent = AtoBver;
 
         float length = sqrt((tangent.x * tangent.x) + (tangent.y * tangent.y) + (tangent.z * tangent.z));
 
@@ -652,6 +651,12 @@ void GraphicsEngine::CreateSpotLight(XMFLOAT3 p_position, XMFLOAT3 p_direction, 
     m_deviceContext->CSSetShaderResources(8, 1, &resourceView);
 }
 
+
+void GraphicsEngine::RemoveSpotLight()
+{
+    m_spotLights.erase(m_spotLights.end() - 1);
+}
+
 void GraphicsEngine::UpdateWorldPosition(const DirectX::XMFLOAT4X4 &p_world)
 {
 
@@ -734,12 +739,36 @@ void GraphicsEngine::Render()
     m_deviceContext->CSSetShaderResources(0, 1, &t_nullSRVView);
     
     Timer t_timer;
-    t_timer.StartTimer();
-    m_swapChain->Present(0, 0);
-    t_timer.StopTimer();
-    double time = t_timer.GetTime();
-    time = t_timer.GetTime();
 
+    if (printFrame)
+    {
+        t_timer.StartTimer();
+    }
+
+    m_swapChain->Present(0, 0);
+
+    if (printFrame)
+    {
+        t_timer.StopTimer();
+        double time = t_timer.GetTime();
+
+      //Number of threads per thread group 
+        int numThreads = THREAD_GROUP_SIZE;
+
+      //Screen resolution 
+        int screenResX = WINDOW_SIZE_X;
+        int screenResY = WINDOW_SIZE_Y;
+
+      //Trace depth 
+        int depth = m_numBounces;
+
+      //Number of light sources 
+        int lights = m_pointLights.size() + m_spotLights.size();
+
+      //Number of triangles 
+
+
+    }
 }
 
 void GraphicsEngine::IncrementBounces()

@@ -132,6 +132,13 @@ void InputSystem::GetKeyInputs()
         cooldown = 1000;
     }
 
+    if (GetAsyncKeyState(0x54) && !actionPressed) // T for remove spotlight
+    {
+        graphEngine->RemoveSpotLight();
+        actionPressed = true;
+        cooldown = 1000;
+    }
+
     // X for activating
     if (GetAsyncKeyState(0x43) && !m_prevXPressed)
     {

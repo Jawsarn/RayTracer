@@ -29,6 +29,7 @@ public:
     void RemovePointLight();
     void UpdatePointLight(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color, UINT p_ID);
     void CreateSpotLight(XMFLOAT3 p_position, XMFLOAT3 p_direction, float p_radius, XMFLOAT3 p_color, float p_spot);
+    void RemoveSpotLight();
     void UpdateWorldPosition(const DirectX::XMFLOAT4X4 & p_world);
     void Render();
 
@@ -150,5 +151,6 @@ private:
     UINT m_numVertices;
 
     UINT m_numBounces;
+    bool printFrame;
 };
 
