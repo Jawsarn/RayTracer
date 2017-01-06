@@ -1,6 +1,6 @@
 #include "Common.fx"
 
-[numthreads(32, 32, 1)]
+[numthreads(NUM_GROUP_THREADS, NUM_GROUP_THREADS, 1)]
 void CS( uint3 threadID : SV_DispatchThreadID)
 {
     if (threadID.x >= ScreenDimensions.x || threadID.y >= ScreenDimensions.y)

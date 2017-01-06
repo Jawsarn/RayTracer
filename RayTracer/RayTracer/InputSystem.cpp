@@ -125,6 +125,12 @@ void InputSystem::GetKeyInputs()
         cooldown = 500;
     }
 
+    if (GetAsyncKeyState(0x50) && !actionPressed) // P for PRINT
+    {
+        graphEngine->PrintDataForNextFrame();
+        actionPressed = true;
+        cooldown = 1000;
+    }
 
     // X for activating
     if (GetAsyncKeyState(0x43) && !m_prevXPressed)

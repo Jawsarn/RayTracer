@@ -15,18 +15,22 @@ struct Vertex
 
 struct Ray
 {
+    int dead;
     XMFLOAT3 Position;
     XMFLOAT3 Direction;
     XMFLOAT3 Color;
     int lastVertexIndex;
     int lastSphereIndex;
+    int lastInstanceIndex;
     float reflectionFactor;
 };
 
 struct ColorData
 {
+    int dead;
     int indexTriangle;
     int indexSphere;
+    int indexInstance;
     XMFLOAT3 startPosition;
     XMFLOAT3 direction;
     XMFLOAT3 hitPosition;
@@ -34,6 +38,13 @@ struct ColorData
     float reflection;
     float u;
     float v;
+};
+
+struct ObjectInstance
+{
+    XMFLOAT4X4 world;
+    int startVertex;
+    int stopVertex;
 };
 
 struct Sphere
@@ -98,11 +109,11 @@ struct PerFramebuffer
     XMFLOAT3 CameraPosition;
     unsigned int NumOfPointLights;
 
+    unsigned int NumOfInstances;
     unsigned int NumOfVertices;
     unsigned int NumOfSpheres;
 
     unsigned int NumOfSpotLights;
-    float filler;
 };
 
 

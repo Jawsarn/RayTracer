@@ -13,9 +13,6 @@
 #include <vector>
 
 
-#define THREAD_GROUP_SIZE_X 32
-#define THREAD_GROUP_SIZE_Y 32
-
 class ComputeWrap;
 class ComputeShader;
 class ObjLoader;
@@ -38,6 +35,8 @@ public:
     void IncrementBounces();
 
     void DecrementBounces();
+
+    void PrintDataForNextFrame();
 
 
 
@@ -85,6 +84,7 @@ private:
     // Buffers
     ComputeBuffer* m_rayBuffer;
     ComputeBuffer* m_colorDataBuffer;
+    ComputeBuffer* m_instanceBuffer;
     ID3D11Buffer* m_constantBuffer;
     ID3D11Buffer* m_perFrameBuffer;
 
@@ -120,12 +120,30 @@ private:
 
     struct ObjectInstance
     {
-        std::string renderObj;
         XMFLOAT4X4 world;
+        int startVertex;
+        int stopVertex;
+    };
+
+    struct VertexObject
+    {
+        int startIndex;
+        int stopIndex;
+
+        VertexObject(int start, int stop)
+        {
+            startIndex = start;
+            stopIndex = stop;
+        }
+        VertexObject()
+        {
+
+        }
     };
 
     // Resources
-    std::map<std::string, RenderObject> m_loadedObjects;
+    std::map<std::string, RenderObject> m_activeObjects;
+    std::map<std::string, VertexObject> m_loadedObjects;
     std::vector<ObjectInstance> m_instances;
 
     // Should be removed later to be put in struct

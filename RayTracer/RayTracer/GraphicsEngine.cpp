@@ -4,6 +4,8 @@
 #include "DDSTextureLoader.h"
 #include "CameraManager.h"
 #include "GameOptions.h"
+#include "Timer.h"
+
 
 GraphicsEngine* GraphicsEngine::m_singleton = nullptr;
 
@@ -517,6 +519,7 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
 
     ComputeBuffer* matBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ShaderMaterial), t_shaderMaterials.size(), true, false, &t_shaderMaterials[0]);
     ComputeBuffer* meshBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(Vertex), t_vertices.size(), true, false, &t_vertices[0]);
+    int preNumVertices = m_numVertices;
     m_numVertices += t_vertices.size();
 
     // Load to graphics
@@ -525,6 +528,8 @@ void GraphicsEngine::LoadObject(const std::string & p_name)
     ID3D11ShaderResourceView* matView = matBuffer->GetResourceView();
     m_deviceContext->CSSetShaderResources(2, 1, &meshView);
     m_deviceContext->CSSetShaderResources(3, 1, &matView);
+
+    m_loadedObjects[p_name] = VertexObject(preNumVertices, m_numVertices);
 }
 
 void GraphicsEngine::CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 p_color)
@@ -549,10 +554,26 @@ void GraphicsEngine::CreateSphere(XMFLOAT3 p_position, float p_radius, XMFLOAT3 
 
 uint32_t GraphicsEngine::AddToRender(const DirectX::XMFLOAT4X4 &p_world, const std::string &p_objName)
 {
+
+    auto find = m_loadedObjects.find(p_objName);
+    if (find == m_loadedObjects.end())
+        return -1;
+
+
     ObjectInstance newInstance;
-    newInstance.renderObj = p_objName;
+    newInstance.startVertex = find->second.startIndex;
+    newInstance.stopVertex = find->second.stopIndex;
     newInstance.world = p_world;
     m_instances.push_back(newInstance);
+
+    if (m_instanceBuffer != nullptr)
+        m_instanceBuffer->Release();
+
+
+    m_instanceBuffer = m_computeWrapper->CreateBuffer(COMPUTE_BUFFER_TYPE::STRUCTURED_BUFFER, sizeof(ObjectInstance), m_instances.size(), true, false, &m_instances[0], false, true);
+
+    ID3D11ShaderResourceView* t_instanceResource = m_instanceBuffer->GetResourceView();
+    m_deviceContext->CSSetShaderResources(10, 1, &t_instanceResource);
 
     return m_instances.size() - 1;
 }
@@ -646,6 +667,7 @@ void GraphicsEngine::UpdatePerFrameBuffer()
     perFrame.NumOfPointLights = m_pointLights.size();
     perFrame.NumOfSpheres = m_spheres.size();
     perFrame.NumOfVertices = m_numVertices;
+    perFrame.NumOfInstances = m_instances.size();
     perFrame.NumOfSpotLights = m_spotLights.size();
 
 
@@ -656,15 +678,16 @@ void GraphicsEngine::UpdatePerFrameBuffer()
     m_deviceContext->Unmap(m_perFrameBuffer, 0);
 }
 
+
 void GraphicsEngine::Render()
 {
     UpdatePerFrameBuffer();
 
 
-    UINT x = ceil((float)WINDOW_DRAW_SIZE_X / (float)THREAD_GROUP_SIZE_X);
-    UINT y = ceil((float)WINDOW_DRAW_SIZE_Y / (float)THREAD_GROUP_SIZE_Y);
-    UINT sx = ceil((float)WINDOW_SIZE_X / (float)THREAD_GROUP_SIZE_X);
-    UINT sy = ceil((float)WINDOW_SIZE_Y / (float)THREAD_GROUP_SIZE_Y);
+    UINT x = ceil((float)WINDOW_DRAW_SIZE_X / (float)THREAD_GROUP_SIZE);
+    UINT y = ceil((float)WINDOW_DRAW_SIZE_Y / (float)THREAD_GROUP_SIZE);
+    UINT sx = ceil((float)WINDOW_SIZE_X / (float)THREAD_GROUP_SIZE);
+    UINT sy = ceil((float)WINDOW_SIZE_Y / (float)THREAD_GROUP_SIZE);
 
     ID3D11UnorderedAccessView* t_rays = m_rayBuffer->GetUnorderedAccessView();
     ID3D11UnorderedAccessView* t_colordata = m_colorDataBuffer->GetUnorderedAccessView();
@@ -710,7 +733,13 @@ void GraphicsEngine::Render()
     ID3D11ShaderResourceView* t_nullSRVView = nullptr;
     m_deviceContext->CSSetShaderResources(0, 1, &t_nullSRVView);
     
+    Timer t_timer;
+    t_timer.StartTimer();
     m_swapChain->Present(0, 0);
+    t_timer.StopTimer();
+    double time = t_timer.GetTime();
+    time = t_timer.GetTime();
+
 }
 
 void GraphicsEngine::IncrementBounces()
@@ -722,4 +751,9 @@ void GraphicsEngine::DecrementBounces()
 {
     if(m_numBounces > 0)
         m_numBounces--;
+}
+
+void GraphicsEngine::PrintDataForNextFrame()
+{
+    OutputDebugString(L"PRINTED FRAME \n");
 }

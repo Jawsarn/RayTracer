@@ -7,27 +7,32 @@ Help text
 For each object we hit, we send a ray to each light and see if it hits or misses.
 If it hits we add light, if not ignore.
 
-TODO
-Fix that not all objects need normalmap
-Look at what happens when no hits, and reflection
-
+TODO; Remember to add instanceID to all checks vs vertexID, as this will be needed as well
 
 */
 
-bool CheckWorldCollision(Ray pRay, float pLengthToLight)
+bool CheckWorldCollision(Ray pRay, float pLengthToLight, int sphereIndex, int triangleIndex, int instanceIndex)
 {
     float t = 0;
     float u = 0;
     float v = 0;
 
 
-    for (uint i = 0; i < NumOfVertices; i += 3)
+    for (int inst = 0; inst < NumOfInstances; inst++)
     {
-        if (CheckTriangleCollision(pRay, i, t, u, v))
+        ObjectInstance objInstance = objInstances[inst];
+        matrix world = objInstance.world;
+        int vertID = objInstance.startVertex;
+        int stop = objInstance.stopVertex;
+
+        for (; vertID < stop; vertID += 3)
         {
-            if (t < pLengthToLight && t > kEpsilon*1000.0f) //&& data.indexTriangle != i
+            if (CheckTriangleCollision(pRay, vertID, world, t, u, v))
             {
-                return true;
+                if (t < pLengthToLight && t > kEpsilon*1000.0f && (triangleIndex != vertID || instanceIndex != inst)) //
+                {
+                    return true;
+                }
             }
         }
     }
@@ -37,7 +42,7 @@ bool CheckWorldCollision(Ray pRay, float pLengthToLight)
     {
         if (CheckSphereCollision(pRay, i, t))
         {
-            if (t < pLengthToLight)
+            if (t < pLengthToLight && sphereIndex != i)
             {
                 return true;
             }
@@ -69,18 +74,29 @@ float3 CalculateNormalFromNormalMap(float3 normalFromMap, float3 worldNormal, fl
 
 }
 
-[numthreads(32, 32, 1)]
+[numthreads(NUM_GROUP_THREADS, NUM_GROUP_THREADS, 1)]
 void CS(uint3 threadID : SV_DispatchThreadID)
 {
     uint index = threadID.y * ScreenDimensions.x + threadID.x;
     if (threadID.x >= ScreenDimensions.x || threadID.y >= ScreenDimensions.y)
         return;
 
-
     ColorData data = colorData[index];
+
+    if (data.indexSphere == -1 && data.indexTriangle == -1 || data.dead)
+    {
+        data.dead = 1;
+        return;
+    }
+
+
 
     float3 normal = float3(0, 0, 0);
     float3 matColor = float3(0, 0, 0);
+    float3 Ambient = float3(0,0,0);
+    float3 Diffuse = float3(0,0,0);
+    float3 Specular = float3(0,0,0);
+    float specularFactor = 1.0f;
 
     if (data.indexSphere != -1)
     {
@@ -90,9 +106,25 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     }
     else if (data.indexTriangle != -1)
     {
+        matrix world = objInstances[data.indexInstance].world;
+
         Vertex v0 = vertices[data.indexTriangle];
         Vertex v1 = vertices[data.indexTriangle + 1];
         Vertex v2 = vertices[data.indexTriangle + 2];
+
+        v0.Position = mul(float4(v0.Position, 1), world).xyz;
+        v1.Position = mul(float4(v1.Position, 1), world).xyz;
+        v2.Position = mul(float4(v2.Position, 1), world).xyz;
+
+        v0.Normal = mul(float4(v0.Normal, 0), world).xyz;
+        v1.Normal = mul(float4(v1.Normal, 0), world).xyz;
+        v2.Normal = mul(float4(v2.Normal, 0), world).xyz;
+
+        v0.Tangent = mul(float4(v0.Tangent, 0), world).xyz;
+        v1.Tangent = mul(float4(v1.Tangent, 0), world).xyz;
+        v2.Tangent = mul(float4(v2.Tangent, 0), world).xyz;
+
+
         float w = (1 - data.u - data.v);
         normal = normalize(v0.Normal * w + v1.Normal * data.u + v2.Normal * data.v);
         float3 tangent = normalize(v0.Tangent * w + v1.Tangent * data.u + v2.Tangent * data.v);
@@ -100,6 +132,11 @@ void CS(uint3 threadID : SV_DispatchThreadID)
 
 
         Material curMat = materials[v0.materialID];
+        Ambient = curMat.Ambient;
+        Diffuse = curMat.Diffuse;
+        Specular = curMat.Specular;
+        specularFactor = curMat.specularFactor;
+
 
         matColor = meshTexture.SampleLevel(simpleSampler, float3(uvCord, curMat.diffuseTexture), 0);
         //matColor = float3(0.5f, 0.5f, 0.5f);
@@ -116,7 +153,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         }
     }
 
-    float3 finalColor = matColor * 0.1f;
+    float3 finalColor = matColor * 0.01f;
 
     // For each light
     for (uint i = 0; i < NumOfPointLights; i++)
@@ -129,9 +166,9 @@ void CS(uint3 threadID : SV_DispatchThreadID)
 
 
         // Add light
-        if (!CheckWorldCollision(newRay, lengthToLight))
+        if (!CheckWorldCollision(newRay, lengthToLight, data.indexSphere, data.indexTriangle, data.indexInstance))
         {
-            finalColor += DirectIlluminationPointLight(data.hitPosition, normal, light, 0.5f) * matColor;
+            finalColor += DirectIlluminationPointLight(data.hitPosition, normal, light, Ambient, Diffuse, Specular, specularFactor) * matColor;
         }
     }
 
@@ -146,9 +183,9 @@ void CS(uint3 threadID : SV_DispatchThreadID)
 
 
         // Add light
-        if (!CheckWorldCollision(newRay, lengthToLight))
+        if (!CheckWorldCollision(newRay, lengthToLight, data.indexSphere, data.indexTriangle, data.indexInstance))
         {
-            finalColor += DirectIlluminationSpotLight(data.hitPosition, normal, spotLights[0], 0.5f) * matColor;
+            finalColor += DirectIlluminationSpotLight(data.hitPosition, normal, spotLights[0], Ambient, Diffuse, Specular, specularFactor) * matColor;
         }
     }
 
@@ -157,244 +194,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
 
     data.direction = normalize(reflect( data.direction, normal));
     data.color = finalColor;
-    data.reflection = 0.5f;
+    data.reflection = data.reflection*0.5f;
     colorData[index] = data;
 
-    //output[threadID.xy] = float4(finalColor, 0);
 }
-
-
-/*
-
-struct Ray
-{
-float3 Position;
-float3 Direction;
-float3 Color;
-int lastVertexIndex;
-float reflectionFactor;
-};
-
-struct Vertex
-{
-float3 Position;
-float3 Normal;
-float2 TexCord;
-};
-
-struct ColorData
-{
-float w;
-float u;
-float v;
-int index;
-float3 hitPos;
-float reflectionFactor;
-float3 direction;
-float filler2;
-float3 LastColor;
-float filler3;
-};
-
-struct PointLight
-{
-float3 Position;
-float Range;
-float3 Color;
-};
-
-cbuffer PerFrameBuffer : register(b0)
-{
-matrix View;
-matrix Proj;
-float2 ScreenDimensions; //width height
-uint NumOfVertices;
-uint NumOfSpheres;
-float3 CameraPosition;
-uint NumOfPointLights;
-};
-
-RWTexture2D<float4> output : register(u0);
-RWStructuredBuffer<Ray> Rays : register(u1);
-StructuredBuffer<Vertex> Vertices : register(t0);
-StructuredBuffer<ColorData> ColorDatas : register(t1);
-StructuredBuffer<PointLight> PointLights : register(t2);
-Texture2D TextureOne : register(t3);
-
-SamplerState Sampler : register(s0);
-
-static const float kEpsilon = 1e-8;
-
-bool CheckTriangleCollision(Ray pRay, uint startIndex, out float t, out float u, out float v)
-{
-Vertex A = Vertices[startIndex];
-Vertex B = Vertices[startIndex + 1];
-Vertex C = Vertices[startIndex + 2];
-
-float3 AtoB = B.Position - A.Position;
-float3 AtoC = C.Position - A.Position;
-
-float3 pVec = cross(pRay.Direction, AtoC);
-float det = dot(AtoB, pVec);
-
-//if culling comment in
-/*if (det < kEpsilon)
-{
-return false;
-}
-
-if (abs(det) < kEpsilon)
-{
-    return false;
-}
-
-float invDet = 1 / det;
-
-float3 tVec = pRay.Position - A.Position;
-
-u = dot(tVec, pVec) * invDet;
-if (u < 0 || u > 1)
-{
-    return false;
-}
-
-float3 qVec = cross(tVec, AtoB);
-v = dot(pRay.Direction, qVec) * invDet;
-if (v < 0 || u + v > 1)
-{
-    return false;
-}
-
-t = dot(AtoC, qVec)*invDet;
-if (t < 0)
-{
-    return false;
-}
-
-return true;
-}
-
-float3 DirectIllumination(float3 pos, float3 norm, PointLight light, float inSpec)
-{
-    float3 lightPos = light.Position;
-
-    float3 lightVec = lightPos - pos;
-
-    float d = length(lightVec);
-    if (d > light.Range)
-    {
-        return float3(0, 0, 0);
-    }
-
-    //normalize vector
-    lightVec /= d;
-
-    //diffuse factor
-    float diffuseFactor = dot(lightVec, norm);
-
-    if (diffuseFactor < 0.02f)
-    {
-        return float3(0, 0, 0);
-    }
-
-    float att = pow(max(0.0f, 1.0 - (d / light.Range)), 2.0f);
-
-    float3 toEye = normalize(CameraPosition - pos);
-    float3 v = reflect(-lightVec, norm);
-
-
-    float specFactor = pow(max(dot(v, toEye), 0.0f), 1.0f)*inSpec;
-
-    return (light.Color *att * (diffuseFactor + specFactor));
-}
-
-
-[numthreads(32, 32, 1)]
-void CS(uint3 threadID : SV_DispatchThreadID)
-{
-    unsigned int index = threadID.y * ScreenDimensions.x + threadID.x;
-
-    ColorData tColData = ColorDatas[index];
-    Ray nextRay;
-    nextRay.Position = float3(0, 0, 0);
-    nextRay.Direction = float3(0, 0, 0);
-    nextRay.Color = float3(0, 0, 0);
-    nextRay.lastVertexIndex = -1;
-    nextRay.reflectionFactor = 0.5f;
-
-
-    float3 finalColor = float3(0, 0, 0);
-
-    if (tColData.index > -1)
-    {
-        Vertex v0 = Vertices[tColData.index];
-        Vertex v1 = Vertices[tColData.index + 1];
-        Vertex v2 = Vertices[tColData.index + 2];
-
-        //create normal from triangle
-
-        float3 hitPos = tColData.hitPos;
-
-
-        float2 texCords = v0.TexCord * tColData.w + v1.TexCord * tColData.u + v2.TexCord * tColData.v;
-        float3 normal = normalize(v0.Normal * tColData.w + v1.Normal * tColData.u + v2.Normal * tColData.v);
-        float3 matColor = TextureOne.SampleLevel(Sampler, texCords, 0.0f);
-        finalColor = matColor * 0.1f;
-
-
-
-        //for each light, we look if any vertices block it
-        for (uint i = 0; i < NumOfPointLights; i++)
-        {
-            //we create a ray from our position and the target
-            Ray tToLightRay;
-            PointLight tLight = PointLights[i];
-            tToLightRay.Direction = normalize(tLight.Position - hitPos);
-            tToLightRay.Position = hitPos;
-
-            bool hit = false;
-
-            //check if we're going from the face outward
-            if (dot(tToLightRay.Direction, normal) > 0)
-            {
-                for (uint k = 0; k < NumOfVertices && !hit; k += 3)
-                {
-                    if (k != tColData.index)
-                    {
-                        float t, u, v;
-                        if (CheckTriangleCollision(tToLightRay, k, t, u, v))
-                        {
-                            hit = true;
-                        }
-                    }
-                }
-            }
-
-            if (!hit)
-            {
-                finalColor += matColor*DirectIllumination(hitPos, normal, tLight, 5.0f);
-            }
-
-        }
-
-        finalColor *= tColData.reflectionFactor;
-        finalColor += tColData.LastColor;
-
-        //maybe move this to the intersection one, because if we do we might be able to use create the rays while we color them?
-        ////new ray here
-        nextRay.Position = hitPos;
-        nextRay.Direction = reflect(tColData.direction, normal);
-        nextRay.Color = finalColor;
-        nextRay.lastVertexIndex = tColData.index;
-        ////reflect direction from ray by normal
-        //float3 newDir = reflect(tRay.Direction, normal);
-
-
-    }
-
-
-    Rays[index] = nextRay;
-    output[threadID.xy] = float4(finalColor, 0);
-}
-
-*/

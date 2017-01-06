@@ -28,11 +28,16 @@ bool CheckSphereCollision(Ray mRay, uint index, out float t)
 
 // See if there are better triangle collision ways
 // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-bool CheckTriangleCollision(Ray pRay, uint startIndex, out float t, out float u, out float v)
+//http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
+//kinda same https://courses.cs.washington.edu/courses/cse457/07sp/lectures/triangle_intersection.pdf
+bool CheckTriangleCollision(Ray pRay, uint startIndex, matrix world, out float t, out float u, out float v)
 {
     Vertex A = vertices[startIndex];
     Vertex B = vertices[startIndex + 1];
     Vertex C = vertices[startIndex + 2];
+    A.Position = mul(float4(A.Position, 1), world).xyz;
+    B.Position = mul(float4(B.Position, 1), world).xyz;
+    C.Position = mul(float4(C.Position, 1), world).xyz;
 
     float3 AtoB = B.Position - A.Position;
     float3 AtoC = C.Position - A.Position;

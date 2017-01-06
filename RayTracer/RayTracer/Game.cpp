@@ -21,7 +21,7 @@ void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
 {
     CameraManager* camMan = CameraManager::GetInstance();
     camMan->SetPerspective(XM_PIDIV4, (float)(WINDOW_DRAW_SIZE_X), (float)(WINDOW_DRAW_SIZE_Y), 0.0f, 1000000.0f);
-    camMan->LookTo(XMFLOAT3(2, 0, -8), XMFLOAT3(-1, 0, 3), XMFLOAT3(0, 1, 0));
+    camMan->LookTo(XMFLOAT3(2, 0, -6), XMFLOAT3(-1, 0, 3), XMFLOAT3(0, 1, 0));
 
     InputSystem::Startup();
 
@@ -34,13 +34,22 @@ void Game::Startup(HINSTANCE p_hInstance, int p_nCmdShow)
     GameObject newObj;
     m_graphicsEngine->LoadObject("../../sword/Sword.obj");
 
-    DirectX::XMStoreFloat4x4(&newObj.world, DirectX::XMMatrixIdentity());
+    XMMATRIX mat = DirectX::XMMatrixTranslation(0,0,3.0f);
+    mat = XMMatrixTranspose(mat);
+    DirectX::XMStoreFloat4x4(&newObj.world, mat);
     newObj.objectID = m_graphicsEngine->AddToRender(newObj.world, "../../sword/Sword.obj");
 
-    m_graphicsEngine->CreateSphere(XMFLOAT3(2, 0, 0), 0.4f, XMFLOAT3(0, 1, 0));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(-2, 1.5f, 0), 0.25, XMFLOAT3(1, 0, 1));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(-1, -1, -1), 0.25, XMFLOAT3(0, 0, 1));
-    m_graphicsEngine->CreateSphere(XMFLOAT3(0, -1.5f, 0), 0.25, XMFLOAT3(1, 0, 0));
+    mat = DirectX::XMMatrixRotationY(XM_PI) * DirectX::XMMatrixTranslation(0, 0, -3.0f);
+    mat = XMMatrixTranspose(mat);
+    DirectX::XMStoreFloat4x4(&newObj.world, mat);
+    newObj.objectID = m_graphicsEngine->AddToRender(newObj.world, "../../sword/Sword.obj");
+
+    m_graphicsEngine->CreateSphere(XMFLOAT3(2, 0, 1), 0.4f, XMFLOAT3(0, 1, 0));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(-2, 1.5f, -2), 0.25, XMFLOAT3(1, 0, 1));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(-1, -1, -2), 0.25, XMFLOAT3(0, 0, 1));
+    m_graphicsEngine->CreateSphere(XMFLOAT3(0, -1.5f, 2), 0.25, XMFLOAT3(1, 0, 0));
+
+    m_graphicsEngine->CreateSphere(XMFLOAT3(-2, 0, 2), 0.6, XMFLOAT3(1, 1, 0));
 
 
 

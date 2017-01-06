@@ -60,6 +60,9 @@
     <ClInclude Include="LightManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="testClass.cpp">
@@ -98,6 +101,9 @@
     <ClCompile Include="LightManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="InitRaysCS.hlsl">
@@ -122,9 +128,6 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="IlluminationFunctions.fx">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="LightCalcCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

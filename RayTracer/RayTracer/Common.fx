@@ -13,28 +13,32 @@ cbuffer PerFrameBuffer : register(b1)
     float3 CameraPosition;
     uint NumOfPointLights;
 
+    uint NumOfInstances;
     uint NumOfVertices;
     uint NumOfSpheres;
     uint NumOfSpotLights;
 
-    float filler;
 };
 
 // Primitives
 struct Ray
 {
+    int dead;
     float3 Position;
     float3 Direction;
     float3 Color;
     int lastVertexIndex;
     int lastSphereIndex;
+    int lastInstanceIndex;
     float reflectionFactor;
 };
 
 struct ColorData
 {
+    int dead;
     int indexTriangle;
     int indexSphere;
+    int indexInstance;
     float3 startPosition;
     float3 direction;
     float3 hitPosition;
@@ -62,6 +66,13 @@ struct Material
     float transparency; // d
     int diffuseTexture;
     int normalTexture;
+};
+
+struct ObjectInstance
+{
+    matrix world;
+    int startVertex;
+    int stopVertex;
 };
 
 struct Sphere
@@ -105,4 +116,8 @@ Texture2DArray normalMap : register(t9);
 
 RWTexture2D<float4> ssOutput : register(u7);
 
+StructuredBuffer<ObjectInstance> objInstances : register(t10);
+
 SamplerState simpleSampler : register(s0);
+
+#define NUM_GROUP_THREADS 16

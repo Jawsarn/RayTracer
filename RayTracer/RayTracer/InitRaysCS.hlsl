@@ -3,7 +3,7 @@
 
 
 
-[numthreads(32, 32, 1)]
+[numthreads(NUM_GROUP_THREADS, NUM_GROUP_THREADS, 1)]
 void CS( uint3 threadID : SV_DispatchThreadID )
 {
     if (threadID.x >= ScreenDimensions.x || threadID.y >= ScreenDimensions.y)
@@ -36,41 +36,8 @@ void CS( uint3 threadID : SV_DispatchThreadID )
     newRay.Color = float3(0,0,0);
     newRay.lastVertexIndex = -1;
     newRay.lastSphereIndex = -1;
+    newRay.lastInstanceIndex = -1;
     newRay.reflectionFactor = 1.0f;
+    newRay.dead = 0;
     rays[outIndex] = newRay;
 }
-
-/*
-
-//warning might not work if we're out of scope with a thread, since it will write to same slot as next row
-unsigned int outIndex = threadID.y * ScreenDimensions.x + threadID.x;
-
-//get clobal cords
-uint2 t_GlobalCord = threadID.xy;
-
-//get the screen cords
-float2 t_ScreenPixelOffset = float2(2.0f, -2.0f) / ScreenDimensions;
-float2 t_ScreenPos = (float2(t_GlobalCord) + 0.5f) * t_ScreenPixelOffset + float2(-1.0f, 1.0f);
-
-//create ray in screenspace, this should now only have to be multiplied with a view matrix to get to view space?
-float2 screenSpaceRay = float2(t_ScreenPos.x / Proj._11, t_ScreenPos.y / Proj._22);
-
-//near plane
-float t_Near = Proj._43;
-
-//either multiplie with inverse view here, or multiply the vertices with view?
-float3 t_ViewSpacePos = mul(float4(t_ScreenPos, 2.0f, 1.0f), InvView).xyz;
-
-float3 viewSpaceRay = mul(float4(screenSpaceRay, 1.0f, 0.0f), InvView).xyz;
-
-Ray t_Ray;
-//t_Ray.Direction = screenSpaceRay;
-t_Ray.Position = t_ViewSpacePos;
-t_Ray.Direction = normalize(viewSpaceRay);
-t_Ray.Color = float3(0, 0, 0);
-t_Ray.lastVertexIndex = -1;
-t_Ray.reflectionFactor = 1.0f;
-
-outputRays[outIndex] = t_Ray;
-
-*/
