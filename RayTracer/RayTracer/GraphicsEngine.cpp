@@ -5,6 +5,8 @@
 #include "CameraManager.h"
 #include "GameOptions.h"
 #include "Timer.h"
+#include <iostream>
+#include <fstream>
 
 
 GraphicsEngine* GraphicsEngine::m_singleton = nullptr;
@@ -752,23 +754,50 @@ void GraphicsEngine::Render()
         t_timer.StopTimer();
         double time = t_timer.GetTime();
 
-      //Number of threads per thread group 
-        int numThreads = THREAD_GROUP_SIZE;
+        WriteFrameDataToFile(time);
 
-      //Screen resolution 
-        int screenResX = WINDOW_SIZE_X;
-        int screenResY = WINDOW_SIZE_Y;
-
-      //Trace depth 
-        int depth = m_numBounces;
-
-      //Number of light sources 
-        int lights = m_pointLights.size() + m_spotLights.size();
-
-      //Number of triangles 
-
-
+        OutputDebugString(L"PRINTED FRAME \n");
+        printFrame = false;
     }
+}
+
+void GraphicsEngine::WriteFrameDataToFile(double p_time)
+{
+    //Number of threads per thread group 
+    int numThreads = THREAD_GROUP_SIZE;
+
+    //Screen resolution 
+    int screenResX = WINDOW_SIZE_X;
+    int screenResY = WINDOW_SIZE_Y;
+
+    //Trace depth 
+    int depth = m_numBounces;
+
+    //Number of light sources 
+    int lights = m_pointLights.size() + m_spotLights.size();
+
+    //Number of triangles 
+    int numVertices = m_numVertices * 2;
+
+    
+    std::string fileName = "../../Data/Thread_" +
+        std::to_string(numThreads) +
+        "_Res_" + std::to_string(screenResX) +
+        "_Bounce_" + std::to_string(depth) + 
+        "_Light_" + std::to_string(lights) + 
+        "_Vert_" + std::to_string(numVertices) + ".txt";
+
+
+    std::ofstream myfile;
+    myfile.open(fileName.c_str(), std::ios::app);
+    if (myfile.is_open())
+    {
+        myfile << p_time << std::endl;
+
+        myfile.close();
+    }
+
+
 }
 
 void GraphicsEngine::IncrementBounces()
@@ -784,5 +813,5 @@ void GraphicsEngine::DecrementBounces()
 
 void GraphicsEngine::PrintDataForNextFrame()
 {
-    OutputDebugString(L"PRINTED FRAME \n");
+    printFrame = true;
 }

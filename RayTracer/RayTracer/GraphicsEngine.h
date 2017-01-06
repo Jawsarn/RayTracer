@@ -33,6 +33,10 @@ public:
     void UpdateWorldPosition(const DirectX::XMFLOAT4X4 & p_world);
     void Render();
 
+
+
+
+
     void IncrementBounces();
 
     void DecrementBounces();
@@ -55,6 +59,7 @@ private:
     HRESULT InitializeSamplers();
 
     void UpdatePerFrameBuffer();
+    void WriteFrameDataToFile(double p_time);
 
     // DirectX Windows parameters
     HINSTANCE m_handleInstance = NULL;
