@@ -18,7 +18,7 @@ bool CheckWorldCollision(Ray pRay, float pLengthToLight, int sphereIndex, int tr
     float v = 0;
 
 
-    for (int inst = 0; inst < NumOfInstances; inst++)
+    for (uint inst = 0; inst < NumOfInstances; inst++)
     {
         ObjectInstance objInstance = objInstances[inst];
         matrix world = objInstance.world;
@@ -138,12 +138,12 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         specularFactor = curMat.specularFactor;
 
 
-        matColor = meshTexture.SampleLevel(simpleSampler, float3(uvCord, curMat.diffuseTexture), 0);
+        matColor = meshTexture.SampleLevel(simpleSampler, float3(uvCord, curMat.diffuseTexture), 0).xyz;
         //matColor = float3(0.5f, 0.5f, 0.5f);
         // Get normal from normalmap
         if (curMat.normalTexture != -1)
         {
-            float3 nMapNormal = normalMap.SampleLevel(simpleSampler, float3(uvCord, curMat.normalTexture), 0);
+            float3 nMapNormal = normalMap.SampleLevel(simpleSampler, float3(uvCord, curMat.normalTexture), 0).xyz;
             normal = CalculateNormalFromNormalMap(nMapNormal, normal, tangent);
             //matColor = normal;
             //normal = CalculateNormalFromNormalMap(nMapNormal, normal, tangent);
@@ -173,9 +173,9 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     }
 
     // For each spotlight
-    for (uint i = 0; i < NumOfSpotLights; i++)
+    for (uint k = 0; k < NumOfSpotLights; k++)
     {
-        SpotLight light = spotLights[i];
+        SpotLight light = spotLights[k];
         Ray newRay;
         newRay.Position = data.hitPosition;
         newRay.Direction = normalize(light.Position - data.hitPosition);
@@ -185,7 +185,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         // Add light
         if (!CheckWorldCollision(newRay, lengthToLight, data.indexSphere, data.indexTriangle, data.indexInstance))
         {
-            finalColor += DirectIlluminationSpotLight(data.hitPosition, normal, spotLights[0], Ambient, Diffuse, Specular, specularFactor) * matColor;
+            finalColor += DirectIlluminationSpotLight(data.hitPosition, normal, light, Ambient, Diffuse, Specular, specularFactor) * matColor;
         }
     }
 

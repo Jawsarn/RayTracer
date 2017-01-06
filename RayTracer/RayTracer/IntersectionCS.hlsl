@@ -26,7 +26,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     int indexInstance = -1;
     //output[threadID.xy] = float4(0,0, 0, 0);
 
-    for (int inst = 0; inst < NumOfInstances; inst++)
+    for (uint inst = 0; inst < NumOfInstances; inst++)
     {
         ObjectInstance objInstance = objInstances[inst];
         matrix world = objInstance.world;
@@ -49,7 +49,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
         }
     }
 
-    for (int i = 0; i < NumOfSpheres; i++)
+    for (uint i = 0; i < NumOfSpheres; i++)
     {
         if (CheckSphereCollision(newRay, i, t))
         {
