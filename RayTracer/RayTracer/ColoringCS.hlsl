@@ -127,7 +127,7 @@ void CS(uint3 threadID : SV_DispatchThreadID)
 
         float w = (1 - data.u - data.v);
         normal = normalize(v0.Normal * w + v1.Normal * data.u + v2.Normal * data.v);
-        float3 tangent = normalize(v0.Tangent * w + v1.Tangent * data.u + v2.Tangent * data.v);
+        float3 tangent = v0.Tangent;
         float2 uvCord = v0.TexCord * w + v1.TexCord * data.u + v2.TexCord * data.v;
 
 
@@ -196,5 +196,6 @@ void CS(uint3 threadID : SV_DispatchThreadID)
     data.color = finalColor;
     data.reflection = data.reflection*0.5f;
     colorData[index] = data;
+
 
 }
